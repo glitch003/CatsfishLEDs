@@ -36,6 +36,7 @@
   #define LED_ON HIGH
 #endif
 
+const int RED_LED_PIN = 13;
 
 
 
@@ -198,7 +199,7 @@ void loop() {
   loopCycles++;
   int frame = loopCycles % FRAME_COUNT;
 
-  if (loopCycles % 100 == 0) {
+  if (loopCycles % 1000 == 0) {
     printTemp();
     printBatteryLevel();
   }
@@ -242,7 +243,7 @@ void loop() {
     turnOffAll();
   }
 
-  delay(100);
+  delay(10);
 }
 
 void printBatteryLevel(){
@@ -258,6 +259,12 @@ void printBatteryLevel(){
   Serial.print(" mV (");
   Serial.print(vbat_per);
   Serial.println("%)");
+
+  if (vbat_per < 25){
+    set_low_battery_led(true);
+  } else {
+    set_low_battery_led(false);
+  }
 }
 
 uint8_t rssiToLedCount(int8_t rssi){
@@ -622,7 +629,13 @@ void printUuid128List(uint8_t* buffer, uint8_t len)
 
 
 
-
+void set_low_battery_led(bool on_or_off){
+  if (on_or_off){
+    digitalWrite(RED_LED_PIN, LED_ON);
+  } else {
+    digitalWrite(RED_LED_PIN, LED_OFF);
+  }
+}
 
 
 float readVBAT(void) {
