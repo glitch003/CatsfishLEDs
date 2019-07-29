@@ -299,19 +299,19 @@ uint8_t rssiToLedCount(int8_t rssi){
 
   // same calculations but using floats.  
 //  Serial.print("non inverted percent: ");
-  Serial.println((float)rssi / (float)range);
+//  Serial.println((float)rssi / (float)range);
   
   float percent = 1 - ((float)rssi / (float)range);
 
 //  Serial.print("final inverted percent: ");
-  Serial.println(percent);
+//  Serial.println(percent);
 
 
 
   uint8_t finalValue = (uint8_t)(round(percent * (float)STRIP_LED_COUNT));
 
 //  Serial.print("final value of led count: ");
-  Serial.println(finalValue);
+//  Serial.println(finalValue);
 
     if (rssi < minSignal || finalValue == 0) {
       return 1; // never show 0 LEDs.  the device is in range, it should always show at least 1.
