@@ -42,12 +42,12 @@
 #define NEOPIXEL_VERSION_STRING "Neopixel v2.0"
 
 #ifdef XENON
-  #define STRIP_PIN                     33   /* Pin used to drive the NeoPixels */
+  #define STRIP_PIN                     33   /* pin D2 on the Xenon */
 #else
-  #define STRIP_PIN                     19   /* Pin used to drive the NeoPixels */
+  #define STRIP_PIN                     19   /* pin 19 on the sparkfun board */
 #endif
 
-#define STRIP_LED_COUNT 10
+#define STRIP_LED_COUNT 16
 #define FRAME_COUNT 1280
 uint8_t *pixelBuffer = NULL;
 
@@ -110,16 +110,39 @@ void setup() {
     Serial.println("phy was not set");
   }
 
-  Bluefruit.ScanResponse.addName();
-//  Bluefruit.Advertising.addName();
+//  Bluefruit.ScanResponse.addName();
 
   
   Bluefruit.Advertising.restartOnDisconnect(true);
-  // Set advertising interval (in unit of 0.625ms):
-  Bluefruit.Advertising.setInterval(32, 244);
-  // number of seconds in fast mode:
+
+
+  // adafruit lib default
+//  // Set advertising interval (in unit of 0.625ms):
+//  Bluefruit.Advertising.setInterval(32, 244);
+//  // number of seconds in fast mode:
 //  Bluefruit.Advertising.setFastTimeout(30);
+
+  // use this if you want really fast advertising
+   // Set advertising interval (in unit of 0.625ms):
+  Bluefruit.Advertising.setInterval(32, 32); // apple intervals are 152.5 ms, 211.25 ms, 318.75 ms, 417.5 ms, 546.25 ms, 760 ms, 852.5 ms, 1022.5 ms, 1285 ms - remember to divide by 0.625!
+  // number of seconds in fast mode:
+  Bluefruit.Advertising.setFastTimeout(0); // stay in fast mode forever
+
+
+  // use this for less power usage
+//  /// Set advertising interval (in unit of 0.625ms):
+//  Bluefruit.Advertising.setInterval(338, 338); // apple intervals are 152.5 ms, 211.25 ms, 318.75 ms, 417.5 ms, 546.25 ms, 760 ms, 852.5 ms, 1022.5 ms, 1285 ms - remember to divide by 0.625!
+//  // number of seconds in fast mode:
+//  Bluefruit.Advertising.setFastTimeout(0); // stay in fast mode forever
+
+  
   Bluefruit.Advertising.start(0);  
+
+
+
+
+
+
 
   /* Start Central Scanning
    * - Enable auto scan if disconnected
@@ -132,8 +155,20 @@ void setup() {
   Bluefruit.Scanner.setRxCallback(basic_scan_callback);
   Bluefruit.Scanner.restartOnDisconnect(true);
 ////  Bluefruit.Scanner.filterRssi(-60);            // Only invoke callback when RSSI >= -80 dBm
-  Bluefruit.Scanner.setInterval(160, 80);       // in units of 0.625 ms
-  Bluefruit.Scanner.useActiveScan(true);        // Request scan response data
+
+// adafruit lib default
+//  Bluefruit.Scanner.setInterval(160, 80);       // in units of 0.625 ms
+
+// use this if you want really fast scanning
+// apple settings for foreground scanning.  scan interval of 40ms and scan window of 30ms
+//  Bluefruit.Scanner.setInterval(64, 48); // in units of 0.625 ms
+
+// use this for less power usage
+// apple settings for background scanning.  300ms scanInterval and 30ms scanWindow
+  Bluefruit.Scanner.setInterval(480, 48); // in units of 0.625 ms
+
+  
+//  Bluefruit.Scanner.useActiveScan(true);        // Request scan response data
   Bluefruit.Scanner.start(0);                   // 0 = Don't stop scanning after n seconds
 
 
@@ -172,7 +207,7 @@ void loop() {
 //  }
 
 
-  if (millis() - deviceLastSeen < 5000){
+  if (millis() - deviceLastSeen < 1000){
     digitalWrite(LED_PIN, LED_ON);
 //    Serial.println("yes");
     showInRange(frame);
@@ -255,31 +290,37 @@ void basic_scan_callback(ble_gap_evt_adv_report_t* report)
   uint8_t len = 0;
   uint8_t buffer[32];
   memset(buffer, 0, sizeof(buffer));
+
+  Serial.print("Device seen at ");
+  Serial.print(millis() / 1000);
+  Serial.print(" seconds with rssi ");
+  Serial.printf("%14s %d dBm\n", "RSSI", report->rssi);
+  deviceLastSeen = millis();
  
-  /* Complete Local Name */
-  if(Bluefruit.Scanner.parseReportByType(report, BLE_GAP_AD_TYPE_COMPLETE_LOCAL_NAME, buffer, sizeof(buffer)))
-  {
-    String s = String((char*)buffer);
-
-    Serial.printf("%14s %d dBm\n", "RSSI", report->rssi);
-    Serial.printf("%14s %s\n", "COMPLETE NAME", buffer);
-    Serial.println();
-    
-
-    if (s.startsWith("Catsfish")){
-      Serial.println("Device is in range");
-//      Serial.printf("%14s %d dBm\n", "RSSI", report->rssi);
-//      Serial.printf("%14s %s\n", "COMPLETE NAME", buffer);
-//      Serial.println();
-
-//      if (report->rssi > -60){
-        deviceLastSeen = millis();
-//      }
-    }
-    memset(buffer, 0, sizeof(buffer));
-
-
-  }
+//  /* Complete Local Name */
+//  if(Bluefruit.Scanner.parseReportByType(report, BLE_GAP_AD_TYPE_COMPLETE_LOCAL_NAME, buffer, sizeof(buffer)))
+//  {
+//    String s = String((char*)buffer);
+//
+//    Serial.printf("%14s %d dBm\n", "RSSI", report->rssi);
+//    Serial.printf("%14s %s\n", "COMPLETE NAME", buffer);
+//    Serial.println();
+//    
+//
+//    if (s.startsWith("Catsfish")){
+//      Serial.println("Device is in range");
+////      Serial.printf("%14s %d dBm\n", "RSSI", report->rssi);
+////      Serial.printf("%14s %s\n", "COMPLETE NAME", buffer);
+////      Serial.println();
+//
+////      if (report->rssi > -60){
+//        deviceLastSeen = millis();
+////      }
+//    }
+//    memset(buffer, 0, sizeof(buffer));
+//
+//
+//  }
 
 
 
