@@ -84,7 +84,7 @@ void setup() {
 //#endif
 
   
-  pinMode(LED_PIN, OUTPUT); // Turn on-board blue LED off
+  pinMode(LED_PIN, OUTPUT); // Turn on-board LED off
   digitalWrite(LED_PIN, LED_OFF);
 
 //  while(!Serial) delay(10);
@@ -94,20 +94,21 @@ void setup() {
    neopixel.updateLength(STRIP_LED_COUNT);
    neopixel.setPin(STRIP_PIN);
    pixelBuffer = new uint8_t[STRIP_LED_COUNT*3];
-   neopixel.setBrightness(50);
+   neopixel.setBrightness(10);
+
+
+
 
   // Uncomment the code below to disable sharing
   // the connection LED on pin 7.
   Bluefruit.autoConnLed(false);
-
-
 
   // Initialize Bluetooth:
   Bluefruit.begin();
   
   // Set max power. Accepted values are: -40, -30, -20, -16, -12, -8, -4, 0, 4, 8
   Bluefruit.setTxPower(8);
-  Bluefruit.setName("CatsfishSF");
+  Bluefruit.setName("Catsfish");
 //  bleuart.begin();
 
   // Start advertising device and bleuart services
@@ -187,6 +188,8 @@ void setup() {
 //  Bluefruit.Scanner.useActiveScan(true);        // Request scan response data
   Bluefruit.Scanner.start(0);                   // 0 = Don't stop scanning after n seconds
 
+  // Get a single ADC sample and throw it away
+  readVBAT();
 
   turnOffAll();
 }
@@ -195,8 +198,9 @@ void loop() {
   loopCycles++;
   int frame = loopCycles % FRAME_COUNT;
 
-  if (loopCycles % 1000 == 0) {
+  if (loopCycles % 100 == 0) {
     printTemp();
+    printBatteryLevel();
   }
   
 //  if (frame == 0) { loopCycles = -1; }
@@ -238,7 +242,22 @@ void loop() {
     turnOffAll();
   }
 
-  delay(10);
+  delay(100);
+}
+
+void printBatteryLevel(){
+  // Get a raw ADC reading
+  float vbat_mv = readVBAT();
+
+  // Convert from raw mv to percentage (based on LIPO chemistry)
+  uint8_t vbat_per = mvToPercent(vbat_mv);
+
+  // Display the results
+  Serial.print("LIPO = ");
+  Serial.print(vbat_mv);
+  Serial.print(" mV (");
+  Serial.print(vbat_per);
+  Serial.println("%)");
 }
 
 uint8_t rssiToLedCount(int8_t rssi){
@@ -252,43 +271,21 @@ uint8_t rssiToLedCount(int8_t rssi){
   }
   
   int range = -1 * (maxSignal - minSignal);
-  rssi = rssi - maxSignal; // make start at 0 and go to 
+  rssi = rssi - maxSignal; // make rssi start at 0 and go to 
 
 
-  Serial.print("non inverted percent: ");
-  Serial.println((int)rssi * 100 / range);
-  
-  int percent = 100 - ((int)rssi * 100 / range);
-
-  Serial.print("final inverted percent: ");
-  Serial.println(percent);
-
-
-
-  uint8_t finalValue = (uint8_t)(STRIP_LED_COUNT*1000/(100000 / percent));
-
-  Serial.print("final value of led count: ");
-  Serial.println(finalValue);
-
-    if (rssi < minSignal || finalValue == 0) {
-      return 1; // never show 0 LEDs.  the device is in range, it should always show at least 1.
-    }
-
-  return finalValue;
-
-
-  // same calculations but using floats.  slows device down and seems like it doesn't advertise as much.
+  // non-float calculations
 //  Serial.print("non inverted percent: ");
-//  Serial.println((float)rssi / (float)range);
+//  Serial.println((int)rssi * 100 / range);
 //  
-//  float percent = 1 - ((float)rssi / (float)range);
+//  int percent = 100 - ((int)rssi * 100 / range);
 //
 //  Serial.print("final inverted percent: ");
 //  Serial.println(percent);
 //
 //
 //
-//  uint8_t finalValue = (uint8_t)(round(percent * (float)STRIP_LED_COUNT));
+//  uint8_t finalValue = (uint8_t)(STRIP_LED_COUNT*1000/(100000 / percent));
 //
 //  Serial.print("final value of led count: ");
 //  Serial.println(finalValue);
@@ -298,6 +295,29 @@ uint8_t rssiToLedCount(int8_t rssi){
 //    }
 //
 //  return finalValue;
+
+
+  // same calculations but using floats.  
+//  Serial.print("non inverted percent: ");
+  Serial.println((float)rssi / (float)range);
+  
+  float percent = 1 - ((float)rssi / (float)range);
+
+//  Serial.print("final inverted percent: ");
+  Serial.println(percent);
+
+
+
+  uint8_t finalValue = (uint8_t)(round(percent * (float)STRIP_LED_COUNT));
+
+//  Serial.print("final value of led count: ");
+  Serial.println(finalValue);
+
+    if (rssi < minSignal || finalValue == 0) {
+      return 1; // never show 0 LEDs.  the device is in range, it should always show at least 1.
+    }
+
+  return finalValue;
 
 
 }
@@ -595,3 +615,51 @@ void printUuid128List(uint8_t* buffer, uint8_t len)
 
   Serial.println();  
 }
+
+
+
+
+
+
+
+
+
+
+float readVBAT(void) {
+  float raw;
+
+  // Set the analog reference to 3.0V (default = 3.6V)
+  analogReference(AR_INTERNAL_3_0);
+
+  // Set the resolution to 12-bit (0..4095)
+  analogReadResolution(12); // Can be 8, 10, 12 or 14
+
+  // Let the ADC settle
+  delay(1);
+
+  // Get the raw 12-bit, 0..3000mV ADC value
+  raw = analogRead(vbat_pin);
+
+  // Set the ADC back to the default settings
+  analogReference(AR_DEFAULT);
+  analogReadResolution(10);
+
+  // Convert the raw value to compensated mv, taking the resistor-
+  // divider into account (providing the actual LIPO voltage)
+  // ADC range is 0..3000mV and resolution is 12-bit (0..4095)
+  return raw * REAL_VBAT_MV_PER_LSB;
+}
+
+uint8_t mvToPercent(float mvolts) {
+  if(mvolts<3300)
+    return 0;
+
+  if(mvolts <3600) {
+    mvolts -= 3300;
+    return mvolts/30;
+  }
+
+  mvolts -= 3600;
+  return 10 + (mvolts * 0.15F );  // thats mvolts /6.66666666
+}
+
