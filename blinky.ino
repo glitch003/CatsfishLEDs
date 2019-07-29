@@ -39,6 +39,18 @@
 
 
 
+// battery stuff
+uint32_t vbat_pin = 5;             // A7 for feather nRF52832, A6 for nRF52840
+#define VBAT_MV_PER_LSB   (0.73242188F)   // 3.0V ADC range and 12-bit ADC resolution = 3000mV/4096
+
+#define VBAT_DIVIDER      (0.71275837F)   // 2M + 0.806M voltage divider on VBAT = (2M / (0.806M + 2M))
+#define VBAT_DIVIDER_COMP (1.403F)        // Compensation factor for the VBAT divider
+
+#define REAL_VBAT_MV_PER_LSB (VBAT_DIVIDER_COMP * VBAT_MV_PER_LSB)
+
+
+
+
 #define NEOPIXEL_VERSION_STRING "Neopixel v2.0"
 
 #ifdef XENON
@@ -54,6 +66,8 @@ uint8_t *pixelBuffer = NULL;
 unsigned long loopCycles = -1;
 
 unsigned long deviceLastSeen = 0;
+
+uint8_t ledsToShowBasedOnRssi = STRIP_LED_COUNT;
 
 Adafruit_NeoPixel neopixel = Adafruit_NeoPixel();
 
@@ -124,14 +138,16 @@ void setup() {
 
   // use this if you want really fast advertising
    // Set advertising interval (in unit of 0.625ms):
-  Bluefruit.Advertising.setInterval(32, 32); // apple intervals are 152.5 ms, 211.25 ms, 318.75 ms, 417.5 ms, 546.25 ms, 760 ms, 852.5 ms, 1022.5 ms, 1285 ms - remember to divide by 0.625!
+  Bluefruit.Advertising.setInterval(32, 32); 
+  // apple intervals are 152.5 ms, 211.25 ms, 318.75 ms, 417.5 ms, 546.25 ms, 760 ms, 852.5 ms, 1022.5 ms, 1285 ms - remember to divide by 0.625!
   // number of seconds in fast mode:
   Bluefruit.Advertising.setFastTimeout(0); // stay in fast mode forever
 
 
   // use this for less power usage
 //  /// Set advertising interval (in unit of 0.625ms):
-//  Bluefruit.Advertising.setInterval(338, 338); // apple intervals are 152.5 ms, 211.25 ms, 318.75 ms, 417.5 ms, 546.25 ms, 760 ms, 852.5 ms, 1022.5 ms, 1285 ms - remember to divide by 0.625!
+//  Bluefruit.Advertising.setInterval(338, 338); 
+//  // apple intervals are 152.5 ms, 211.25 ms, 318.75 ms, 417.5 ms, 546.25 ms, 760 ms, 852.5 ms, 1022.5 ms, 1285 ms - remember to divide by 0.625!
 //  // number of seconds in fast mode:
 //  Bluefruit.Advertising.setFastTimeout(0); // stay in fast mode forever
 
@@ -178,6 +194,11 @@ void setup() {
 void loop() {
   loopCycles++;
   int frame = loopCycles % FRAME_COUNT;
+
+  if (loopCycles % 1000 == 0) {
+    printTemp();
+  }
+  
 //  if (frame == 0) { loopCycles = -1; }
   
 //  // If data has come in via BLE:
@@ -220,13 +241,74 @@ void loop() {
   delay(10);
 }
 
+uint8_t rssiToLedCount(int8_t rssi){
+//  return STRIP_LED_COUNT;
+  // rssi range is about -33 to -100
+  int8_t maxSignal = -40;
+  int8_t minSignal = -100;
+
+  if (rssi > maxSignal){
+    return STRIP_LED_COUNT;
+  }
+  
+  int range = -1 * (maxSignal - minSignal);
+  rssi = rssi - maxSignal; // make start at 0 and go to 
+
+
+  Serial.print("non inverted percent: ");
+  Serial.println((int)rssi * 100 / range);
+  
+  int percent = 100 - ((int)rssi * 100 / range);
+
+  Serial.print("final inverted percent: ");
+  Serial.println(percent);
+
+
+
+  uint8_t finalValue = (uint8_t)(STRIP_LED_COUNT*1000/(100000 / percent));
+
+  Serial.print("final value of led count: ");
+  Serial.println(finalValue);
+
+    if (rssi < minSignal || finalValue == 0) {
+      return 1; // never show 0 LEDs.  the device is in range, it should always show at least 1.
+    }
+
+  return finalValue;
+
+
+  // same calculations but using floats.  slows device down and seems like it doesn't advertise as much.
+//  Serial.print("non inverted percent: ");
+//  Serial.println((float)rssi / (float)range);
+//  
+//  float percent = 1 - ((float)rssi / (float)range);
+//
+//  Serial.print("final inverted percent: ");
+//  Serial.println(percent);
+//
+//
+//
+//  uint8_t finalValue = (uint8_t)(round(percent * (float)STRIP_LED_COUNT));
+//
+//  Serial.print("final value of led count: ");
+//  Serial.println(finalValue);
+//
+//    if (rssi < minSignal || finalValue == 0) {
+//      return 1; // never show 0 LEDs.  the device is in range, it should always show at least 1.
+//    }
+//
+//  return finalValue;
+
+
+}
+
 void showInRange(int frame){
   long firstPixelHue = frame * 256;
-  for(int i=0; i<neopixel.numPixels(); i++) { // For each pixel in strip...
+  for(int i=0; i<ledsToShowBasedOnRssi; i++) { // For each pixel in strip...
     // Offset pixel hue by an amount to make one full revolution of the
     // color wheel (range of 65536) along the length of the strip
     // (strip.numPixels() steps):
-    int pixelHue = firstPixelHue + (i * 65536L / neopixel.numPixels());
+    int pixelHue = firstPixelHue + (i * 65536L / ledsToShowBasedOnRssi);
     // strip.ColorHSV() can take 1 or 3 arguments: a hue (0 to 65535) or
     // optionally add saturation and value (brightness) (each 0 to 255).
     // Here we're using just the single-argument hue variant. The result
@@ -234,6 +316,12 @@ void showInRange(int frame){
     // before assigning to each pixel:
     neopixel.setPixelColor(i, neopixel.gamma32(neopixel.ColorHSV(pixelHue)));
   }
+  
+  // turn off rest
+  for(int i = ledsToShowBasedOnRssi; i < STRIP_LED_COUNT; i++){
+    neopixel.setPixelColor(i, neopixel.Color(0,0,0));
+  }
+  
   neopixel.show(); // Update strip with new contents
 }
 
@@ -295,7 +383,9 @@ void basic_scan_callback(ble_gap_evt_adv_report_t* report)
   Serial.print(millis() / 1000);
   Serial.print(" seconds with rssi ");
   Serial.printf("%14s %d dBm\n", "RSSI", report->rssi);
+  
   deviceLastSeen = millis();
+  ledsToShowBasedOnRssi = rssiToLedCount(report->rssi);
  
 //  /* Complete Local Name */
 //  if(Bluefruit.Scanner.parseReportByType(report, BLE_GAP_AD_TYPE_COMPLETE_LOCAL_NAME, buffer, sizeof(buffer)))
@@ -329,7 +419,26 @@ void basic_scan_callback(ble_gap_evt_adv_report_t* report)
   Bluefruit.Scanner.resume();
 }
 
-//
+
+// print chip temp
+void printTemp() {
+  int32_t temperature;                                        // variable to hold temp reading
+  sd_temp_get(&temperature);                            // get new temperature
+  int16_t temp_new = (int16_t) temperature;                   // convert from int32_t to int16_t
+  uint8_t integer = (uint8_t)((temp_new >> 2) & 0xFFUL); // Right-shift by two to remove decimal part
+  uint8_t decimal = (uint8_t)((temp_new << 6) & 0xFFUL); // Left-shift 6 to get fractional part with 0.25 degrees C resolution
+
+  Serial.print("temp = ");
+  Serial.print(integer);
+  Serial.print(".");
+  Serial.print(decimal);
+  Serial.println(" degrees");
+}
+
+
+
+
+// this prints everything that is scanned
 void scan_callback(ble_gap_evt_adv_report_t* report)
 {
   PRINT_LOCATION();
