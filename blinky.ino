@@ -68,7 +68,7 @@ uint32_t vbat_pin = 5;             // A7 for feather nRF52832, A6 for nRF52840
 #define FRAME_COUNT 1280
 uint8_t *pixelBuffer = NULL;
 
-unsigned long loopCycles = -1;
+unsigned long loopCycles = 0;
 
 unsigned long deviceLastSeen = 0;
 
