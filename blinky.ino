@@ -19,6 +19,9 @@
 
 //BLEUart bleuart; // uart over ble
 
+// master external antenna switch.  comment this out to use internal antenna.
+//#define EXTERNAL_ANTENNA
+
 // master XENON flag.  turn this off if not using particle XENON
 #define XENON
 
@@ -37,6 +40,7 @@
 #endif
 
 const int RED_LED_PIN = 13;
+
 
 
 
@@ -60,7 +64,7 @@ uint32_t vbat_pin = 5;             // A7 for feather nRF52832, A6 for nRF52840
   #define STRIP_PIN                     19   /* pin 19 on the sparkfun board */
 #endif
 
-#define STRIP_LED_COUNT 16
+#define STRIP_LED_COUNT 24
 #define FRAME_COUNT 1280
 uint8_t *pixelBuffer = NULL;
 
@@ -70,7 +74,26 @@ unsigned long deviceLastSeen = 0;
 
 uint8_t ledsToShowBasedOnRssi = STRIP_LED_COUNT;
 
-Adafruit_NeoPixel neopixel = Adafruit_NeoPixel();
+Adafruit_NeoPixel neopixel = Adafruit_NeoPixel(STRIP_LED_COUNT, STRIP_PIN, NEO_GRB + NEO_KHZ800);
+// Argument 1 = Number of pixels in NeoPixel strip
+// Argument 2 = Arduino pin number (most are valid)
+// Argument 3 = Pixel type flags, add together as needed:
+//   NEO_KHZ800  800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+//   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
+//   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
+//   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
+//   NEO_RGBW    Pixels are wired for RGBW bitstream (NeoPixel RGBW products)
+
+
+#define BUTTON_PIN 11
+int buttonState = 0;
+bool ledsOn = true;
+int lastButtonState = LOW;
+
+// the following variables are unsigned long's because the time, measured in miliseconds,
+// will quickly become a bigger number than can be stored in an int.
+unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
+unsigned long debounceDelay = 50;    // the debounce time; increase if the output flickers
 
 
 
@@ -83,6 +106,17 @@ void setup() {
 //  pinMode(XENON_BLUE_LED_PIN, OUTPUT);
 //  digitalWrite(XENON_BLUE_LED_PIN, LOW);
 //#endif
+  
+  // antenna stuff
+  pinMode(24, OUTPUT);
+  pinMode(25, OUTPUT);
+  #ifdef EXTERNAL_ANTENNA
+    digitalWrite(24,LOW);
+    digitalWrite(25,HIGH);
+  #else
+    digitalWrite(24,HIGH);
+    digitalWrite(25,LOW);
+  #endif
 
   
   pinMode(LED_PIN, OUTPUT); // Turn on-board LED off
@@ -92,10 +126,8 @@ void setup() {
 
    // Config Neopixels
    neopixel.begin();
-   neopixel.updateLength(STRIP_LED_COUNT);
-   neopixel.setPin(STRIP_PIN);
    pixelBuffer = new uint8_t[STRIP_LED_COUNT*3];
-   neopixel.setBrightness(10);
+   neopixel.setBrightness(50);
 
 
 
@@ -232,8 +264,9 @@ void loop() {
 //    }
 //  }
 
+  checkButtonState();
 
-  if (millis() - deviceLastSeen < 1000){
+  if (millis() - deviceLastSeen < 1000 && ledsOn){
     digitalWrite(LED_PIN, LED_ON);
 //    Serial.println("yes");
     showInRange(frame);
@@ -244,6 +277,38 @@ void loop() {
   }
 
   delay(10);
+}
+
+void checkButtonState(){
+  // read the state of the pushbutton value:
+  int reading = digitalRead(BUTTON_PIN);
+
+  // If the switch changed, due to noise or pressing:
+  if (reading != lastButtonState) {
+    // reset the debouncing timer
+    lastDebounceTime = millis();
+  }
+
+  if ((millis() - lastDebounceTime) > debounceDelay) {
+    // whatever the reading is at, it's been there for longer
+    // than the debounce delay, so take it as the actual current state:
+//    Serial.println("((millis() - lastDebounceTime) > debounceDelay)");
+    // if the button state has changed:
+    if (reading != buttonState) {
+//      Serial.println("(reading != buttonState)");
+      buttonState = reading;
+
+      // only toggle the LED if the new button state is HIGH
+      if (buttonState == HIGH) {
+//        Serial.println("(buttonState == HIGH)");
+        ledsOn = !ledsOn;
+      }
+    }
+  }
+
+  // save the reading.  Next time through the loop,
+  // it'll be the lastButtonState:
+  lastButtonState = reading;
 }
 
 void printBatteryLevel(){
