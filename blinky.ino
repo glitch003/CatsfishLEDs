@@ -31,7 +31,7 @@
   const int LED_PIN = 14;
   #define LED_OFF HIGH
   #define LED_ON LOW
-//  #define XENON_BLUE_LED_PIN 44
+  #define XENON_BLUE_LED_PIN 44
 #else
   // pin 7 for sparkfun
   const int LED_PIN = 7;
@@ -64,7 +64,7 @@ uint32_t vbat_pin = 5;             // A7 for feather nRF52832, A6 for nRF52840
   #define STRIP_PIN                     19   /* pin 19 on the sparkfun board */
 #endif
 
-#define STRIP_LED_COUNT 24
+#define STRIP_LED_COUNT 16
 #define FRAME_COUNT 1280
 uint8_t *pixelBuffer = NULL;
 
@@ -86,26 +86,26 @@ Adafruit_NeoPixel neopixel = Adafruit_NeoPixel(STRIP_LED_COUNT, STRIP_PIN, NEO_G
 
 
 #define BUTTON_PIN 11
-int buttonState = 0;
-bool ledsOn = true;
-int lastButtonState = LOW;
+volatile int buttonState = 0;
+volatile byte ledsOn = HIGH;
+volatile int lastButtonState = LOW;
 
 // the following variables are unsigned long's because the time, measured in miliseconds,
 // will quickly become a bigger number than can be stored in an int.
 unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
 unsigned long debounceDelay = 50;    // the debounce time; increase if the output flickers
 
-
+SoftwareTimer neopixelTimer;
 
 void setup() {
   // Initialize hardware:
   Serial.begin(115200); // Serial is the USB serial port
 
-//#ifdef XENON
-//  // the particle xenon has 2 user controllable LEDS - one RGB and one Blue.  We kill the blue here.
-//  pinMode(XENON_BLUE_LED_PIN, OUTPUT);
+#ifdef XENON
+  // the particle xenon has 2 user controllable LEDS - one RGB and one Blue.  We kill the blue here.
+  pinMode(XENON_BLUE_LED_PIN, OUTPUT);
 //  digitalWrite(XENON_BLUE_LED_PIN, LOW);
-//#endif
+#endif
   
   // antenna stuff
   pinMode(24, OUTPUT);
@@ -122,12 +122,16 @@ void setup() {
   pinMode(LED_PIN, OUTPUT); // Turn on-board LED off
   digitalWrite(LED_PIN, LED_OFF);
 
+
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), buttonPressed, ISR_DEFERRED | CHANGE);
+
 //  while(!Serial) delay(10);
 
    // Config Neopixels
    neopixel.begin();
    pixelBuffer = new uint8_t[STRIP_LED_COUNT*3];
-   neopixel.setBrightness(50);
+   neopixel.setBrightness(1);
 
 
 
@@ -224,7 +228,16 @@ void setup() {
   // Get a single ADC sample and throw it away
   readVBAT();
 
+  // turn off all leds
   turnOffAll();
+
+  // start neopixel timer
+  neopixelTimer.begin(10, neopixelTimerCallback); 
+  neopixelTimer.startFromISR();
+
+
+
+  suspendLoop();
 }
 
 void loop() {
@@ -264,9 +277,9 @@ void loop() {
 //    }
 //  }
 
-  checkButtonState();
+  //checkButtonState();
 
-  if (millis() - deviceLastSeen < 1000 && ledsOn){
+  if (millis() - deviceLastSeen < 1000 && ledsOn == HIGH){
     digitalWrite(LED_PIN, LED_ON);
 //    Serial.println("yes");
     showInRange(frame);
@@ -278,6 +291,61 @@ void loop() {
 
   delay(10);
 }
+
+void neopixelTimerCallback(TimerHandle_t _handle){
+  loopCycles++;
+  int frame = loopCycles % FRAME_COUNT;
+
+//  if (loopCycles % 1000 == 0) {
+//    printTemp();
+//    printBatteryLevel();
+//  }
+//  
+  showInRange(frame);
+  
+}
+
+void buttonPressed(){
+//  Serial.println("buttonPressed()");
+  // read the state of the pushbutton value:
+  int reading = digitalRead(BUTTON_PIN);
+//  Serial.print("reading: ");
+//  Serial.println(reading);
+
+  if ((millis() - lastDebounceTime) > debounceDelay) {
+    // whatever the reading is at, it's been there for longer
+    // than the debounce delay, so take it as the actual current state:
+//    Serial.println("((millis() - lastDebounceTime) > debounceDelay)");
+    // if the button state has changed:
+    if (reading != buttonState) {
+//      Serial.println("(reading != buttonState)");
+      buttonState = reading;
+
+      // only toggle the LED if the new button state is HIGH
+      if (buttonState == HIGH) {
+//        Serial.println("(buttonState == HIGH)");
+        ledsOn = !ledsOn;
+        digitalWrite(XENON_BLUE_LED_PIN, ledsOn);
+      }
+    }
+  }
+
+
+  
+  // If the switch changed, due to noise or pressing:
+  if (reading != lastButtonState) {
+    // reset the debouncing timer
+    lastDebounceTime = millis();
+  }
+
+   // save the reading.  Next time through the loop,
+  // it'll be the lastButtonState:
+  lastButtonState = reading;
+
+  
+}
+
+
 
 void checkButtonState(){
   // read the state of the pushbutton value:
