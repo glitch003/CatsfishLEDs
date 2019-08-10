@@ -17,6 +17,9 @@
 #include <bluefruit.h>
 #include <Adafruit_NeoPixel.h>
 
+//#include <FastLED.h>
+
+
 //BLEUart bleuart; // uart over ble
 
 // master external antenna switch.  comment this out to use internal antenna.
@@ -64,6 +67,8 @@ uint32_t vbat_pin = 5;             // A7 for feather nRF52832, A6 for nRF52840
   #define STRIP_PIN                     19   /* pin 19 on the sparkfun board */
 #endif
 
+#define BRIGHTNESS 10
+
 #define STRIP_LED_COUNT 16
 #define FRAME_COUNT 1280
 uint8_t *pixelBuffer = NULL;
@@ -73,6 +78,11 @@ unsigned long loopCycles = 0;
 unsigned long deviceLastSeen = 0;
 
 uint8_t ledsToShowBasedOnRssi = STRIP_LED_COUNT;
+
+//CRGB leds[STRIP_LED_COUNT];
+
+uint8_t gHue = 0; // rotating "base color" used by many of the patterns
+
 
 Adafruit_NeoPixel neopixel = Adafruit_NeoPixel(STRIP_LED_COUNT, STRIP_PIN, NEO_GRB + NEO_KHZ800);
 // Argument 1 = Number of pixels in NeoPixel strip
@@ -131,8 +141,10 @@ void setup() {
    // Config Neopixels
    neopixel.begin();
    pixelBuffer = new uint8_t[STRIP_LED_COUNT*3];
-   neopixel.setBrightness(1);
+   neopixel.setBrightness(BRIGHTNESS);
 
+//  FastLED.addLeds<NEOPIXEL, STRIP_PIN>(leds, STRIP_LED_COUNT).setCorrection(TypicalSMD5050);
+//  FastLED.setBrightness(BRIGHTNESS);
 
 
 
@@ -240,70 +252,79 @@ void setup() {
   suspendLoop();
 }
 
-void loop() {
-  loopCycles++;
-  int frame = loopCycles % FRAME_COUNT;
+void loop() {}
 
-  if (loopCycles % 1000 == 0) {
-    printTemp();
-    printBatteryLevel();
-  }
-  
-//  if (frame == 0) { loopCycles = -1; }
-  
-//  // If data has come in via BLE:
-//  if (bleuart.available()) {
-//    uint8_t c;
-//    // use bleuart.read() to read a character sent over BLE
-//    c = (uint8_t) bleuart.read();
-//    // Print out the character for debug purposes:
-//    Serial.write(c);
+//void loop() {
+//  loopCycles++;
+//  int frame = loopCycles % FRAME_COUNT;
 //
-//    // If the character is one of our expected values,
-//    // do something:
-//    switch (c) {
-//      // 0 number or character, turn the LED off:
-//      case 0:
-//      case '0':
-//        digitalWrite(LED_PIN, LED_OFF);
-//        break;
-//      // 1 number or character, turn the LED on:
-//      case 1:
-//      case '1':
-//        digitalWrite(LED_PIN, LED_ON);
-//        break;
-//      default:
-//        break;
-//    }
-//  }
-
-  //checkButtonState();
-
-  if (millis() - deviceLastSeen < 1000 && ledsOn == HIGH){
-    digitalWrite(LED_PIN, LED_ON);
-//    Serial.println("yes");
-    showInRange(frame);
-  } else {
-    digitalWrite(LED_PIN, LED_OFF);
-//    Serial.println("no");
-    turnOffAll();
-  }
-
-  delay(10);
-}
-
-void neopixelTimerCallback(TimerHandle_t _handle){
-  loopCycles++;
-  int frame = loopCycles % FRAME_COUNT;
-
 //  if (loopCycles % 1000 == 0) {
 //    printTemp();
 //    printBatteryLevel();
 //  }
 //  
+////  if (frame == 0) { loopCycles = -1; }
+//  
+////  // If data has come in via BLE:
+////  if (bleuart.available()) {
+////    uint8_t c;
+////    // use bleuart.read() to read a character sent over BLE
+////    c = (uint8_t) bleuart.read();
+////    // Print out the character for debug purposes:
+////    Serial.write(c);
+////
+////    // If the character is one of our expected values,
+////    // do something:
+////    switch (c) {
+////      // 0 number or character, turn the LED off:
+////      case 0:
+////      case '0':
+////        digitalWrite(LED_PIN, LED_OFF);
+////        break;
+////      // 1 number or character, turn the LED on:
+////      case 1:
+////      case '1':
+////        digitalWrite(LED_PIN, LED_ON);
+////        break;
+////      default:
+////        break;
+////    }
+////  }
+//
+//  //checkButtonState();
+//
+//  if (millis() - deviceLastSeen < 1000 && ledsOn == HIGH){
+//    digitalWrite(LED_PIN, LED_ON);
+////    Serial.println("yes");
+//    showInRange(frame);
+//  } else {
+//    digitalWrite(LED_PIN, LED_OFF);
+////    Serial.println("no");
+//    turnOffAll();
+//  }
+//
+//  delay(10);
+//}
+
+void neopixelTimerCallback(TimerHandle_t _handle){
+  loopCycles++;
+  int frame = loopCycles % FRAME_COUNT;
+
   showInRange(frame);
-  
+
+  if (loopCycles % 1000 == 0) {
+    ada_callback_fromISR(NULL, 0, switch_isr_callback); // Queue up a task with no extra variables and no arguments.
+                                                      // Every single interrupt is serviced, because internally, a
+                                                      // queue is used
+  }
 }
+
+void switch_isr_callback(void){
+  printTemp();
+  printBatteryLevel();
+}
+
+
 
 void buttonPressed(){
 //  Serial.println("buttonPressed()");
@@ -326,6 +347,13 @@ void buttonPressed(){
 //        Serial.println("(buttonState == HIGH)");
         ledsOn = !ledsOn;
         digitalWrite(XENON_BLUE_LED_PIN, ledsOn);
+        
+        if (ledsOn){
+          neopixelTimer.start();
+        } else {
+          neopixelTimer.stop();
+          turnOffAll();
+        }
       }
     }
   }
@@ -401,7 +429,7 @@ void printBatteryLevel(){
 }
 
 uint8_t rssiToLedCount(int8_t rssi){
-//  return STRIP_LED_COUNT;
+  return STRIP_LED_COUNT;
   // rssi range is about -33 to -100
   int8_t maxSignal = -40;
   int8_t minSignal = -100;
@@ -491,6 +519,38 @@ void turnOffAll(){
   }
   neopixel.show();
 }
+
+
+//void showInRange(int frame){
+////  long firstPixelHue = frame * 256;
+////  for(int i=0; i<ledsToShowBasedOnRssi; i++) { // For each pixel in strip...
+////    // Offset pixel hue by an amount to make one full revolution of the
+////    // color wheel (range of 65536) along the length of the strip
+////    // (strip.numPixels() steps):
+////    uint8_t pixelHue = firstPixelHue + (i * 256 / ledsToShowBasedOnRssi);
+////    // strip.ColorHSV() can take 1 or 3 arguments: a hue (0 to 65535) or
+////    // optionally add saturation and value (brightness) (each 0 to 255).
+////    // Here we're using just the single-argument hue variant. The result
+////    // is passed through strip.gamma32() to provide 'truer' colors
+////    // before assigning to each pixel:
+////    leds[i] = CHSV(pixelHue, 255, 255);
+////  }
+////  
+////  // turn off rest
+////  for(int i = ledsToShowBasedOnRssi; i < STRIP_LED_COUNT; i++){
+////    leds[i] = CHSV(0,0,0);
+////  }
+//  fill_rainbow( leds, STRIP_LED_COUNT, gHue, 7);
+//  FastLED.show(); // Update strip with new contents
+//}
+//
+//
+//void turnOffAll(){
+//  for(int i = 0; i < STRIP_LED_COUNT; i++){
+//    leds[i] = CHSV(0, 0, 0);
+//  }
+//  FastLED.show(); 
+//}
 
 //
 //void showInRange(int frame){
