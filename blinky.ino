@@ -152,7 +152,7 @@ void setup() {
 //  FastLED.setBrightness(BRIGHTNESS);
 
 
-  // initBluetooth();
+   initBluetooth();
 
 
   // Get a single ADC sample and throw it away
@@ -162,11 +162,11 @@ void setup() {
   turnOffAll();
 
   // start neopixel timer
-  // neopixelTimer.begin(10, neopixelTimerCallback);
-  // neopixelTimer.start();
+   neopixelTimer.begin(10, neopixelTimerCallback);
+   neopixelTimer.start();
 
-  // batteryCheckTimer.begin(15000, batteryCheckCallback);
-  // batteryCheckTimer.start();
+   batteryCheckTimer.begin(15000, batteryCheckCallback);
+   batteryCheckTimer.start();
 
 
 
@@ -434,19 +434,19 @@ void enterSleepMode(){
   neopixelTimer.stop();
   turnOffAll();
 
-  // Bluefruit.Scanner.stop();
+  Bluefruit.Scanner.stop();
 
-  // Bluefruit.Advertising.stop();
+  Bluefruit.Advertising.stop();
 }
 
 void exitSleepMode(){
   neopixelTimer.start();
 
   // start scanning
-  // Bluefruit.Scanner.start(0);                   // 0 = Don't stop scanning after n seconds
+  Bluefruit.Scanner.start(0);                   // 0 = Don't stop scanning after n seconds
 
   // // start advertising
-  // Bluefruit.Advertising.start(0);
+  Bluefruit.Advertising.start(0);
 }
 
 void enterHeadlampMode(){
@@ -935,4 +935,3 @@ uint8_t mvToPercent(float mvolts) {
   mvolts -= 3600;
   return 10 + (mvolts * 0.15F );  // thats mvolts /6.66666666
 }
-
