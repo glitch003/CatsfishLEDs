@@ -67,11 +67,11 @@ uint32_t vbat_pin = 5;             // A7 for feather nRF52832, A6 for nRF52840
   #define STRIP_PIN                     19   /* pin 19 on the sparkfun board */
 #endif
 
-#define BRIGHTNESS 10
 
 #define STRIP_LED_COUNT 16
 #define FRAME_COUNT 1280
 uint8_t *pixelBuffer = NULL;
+uint8_t brightness = 10;
 
 unsigned long loopCycles = 0;
 
@@ -100,10 +100,14 @@ volatile int buttonState = 0;
 volatile byte ledsOn = HIGH;
 volatile int lastButtonState = LOW;
 
+
 // the following variables are unsigned long's because the time, measured in miliseconds,
 // will quickly become a bigger number than can be stored in an int.
-unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
-unsigned long debounceDelay = 50;    // the debounce time; increase if the output flickers
+volatile unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
+const unsigned long debounceDelay = 50;    // the debounce time; increase if the output flickers
+volatile unsigned long lastPressTime = 0;
+const unsigned long maxTimeInbetweenMultipleClicks = 1000;
+volatile int pressCount = 0;
 
 SoftwareTimer neopixelTimer, batteryCheckTimer;
 
@@ -141,7 +145,7 @@ void setup() {
    // Config Neopixels
    neopixel.begin();
    pixelBuffer = new uint8_t[STRIP_LED_COUNT*3];
-   neopixel.setBrightness(BRIGHTNESS);
+   neopixel.setBrightness(brightness);
 
 //  FastLED.addLeds<NEOPIXEL, STRIP_PIN>(leds, STRIP_LED_COUNT).setCorrection(TypicalSMD5050);
 //  FastLED.setBrightness(BRIGHTNESS);
@@ -202,7 +206,7 @@ void setup() {
 //  Bluefruit.Advertising.setFastTimeout(0); // stay in fast mode forever
 
 
-  Bluefruit.Advertising.start(0);
+
 
 
 
@@ -235,7 +239,6 @@ void setup() {
 
 
 //  Bluefruit.Scanner.useActiveScan(true);        // Request scan response data
-  Bluefruit.Scanner.start(0);                   // 0 = Don't stop scanning after n seconds
 
   // Get a single ADC sample and throw it away
   readVBAT();
@@ -313,6 +316,7 @@ void neopixelTimerCallback(TimerHandle_t _handle){
   loopCycles++;
   int frame = loopCycles % FRAME_COUNT;
 
+  neopixel.setBrightness(brightness);
   showInRange(frame);
 }
 
@@ -370,16 +374,36 @@ void buttonPressed(){
 //      Serial.println("(reading != buttonState)");
       buttonState = reading;
 
-      // only toggle the LED if the new button state is HIGH
-      if (buttonState == HIGH) {
-//        Serial.println("(buttonState == HIGH)");
-        ledsOn = !ledsOn;
-        digitalWrite(XENON_BLUE_LED_PIN, ledsOn);
-
-        if (ledsOn){
-          exitSleepMode();
+      if (buttonState == LOW) {
+//         volatile unsigned long lastPressTime = 0;
+// const unsigned long maxTimeInbetweenMultipleClicks = 1000;
+// volatile int pressCount = 0;
+        if ((millis() - lastPressTime) < maxTimeInbetweenMultipleClicks){
+          pressCount++;
         } else {
-          enterSleepMode();
+          pressCount = 1;
+        }
+
+        lastPressTime = millis();
+      } else {
+        if (pressCount == 1) {
+          ledsOn = !ledsOn;
+          digitalWrite(XENON_BLUE_LED_PIN, ledsOn);
+
+          if (ledsOn){
+            exitSleepMode();
+          } else {
+            enterSleepMode();
+          }
+        } else if (pressCount == 2) {
+          // if LEDS are on, headlamp mode will not work, because the LEDs will be brighter.  so turn them off.
+          if (ledsOn){
+            enterSleepMode();
+            ledsOn = LOW;
+            digitalWrite(XENON_BLUE_LED_PIN, ledsOn);
+          }
+
+          enterHeadlampMode();
         }
       }
     }
@@ -403,10 +427,32 @@ void buttonPressed(){
 void enterSleepMode(){
   neopixelTimer.stop();
   turnOffAll();
+
+  Bluefruit.Scanner.stop();
+
+  Bluefruit.Advertising.stop();
 }
 
 void exitSleepMode(){
   neopixelTimer.start();
+
+  // start scanning
+  Bluefruit.Scanner.start(0);                   // 0 = Don't stop scanning after n seconds
+
+  // start advertising
+  Bluefruit.Advertising.start(0);
+}
+
+void enterHeadlampMode(){
+  neopixel.setBrightness(100);
+  for(int i = 0; i < STRIP_LED_COUNT; i ++){
+    neopixel.setPixelColor(i, neopixel.Color(255,255,255));
+  }
+  neopixel.show();
+}
+
+void exitHeadlampMode(){
+  turnOffAll();
 }
 
 
