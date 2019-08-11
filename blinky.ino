@@ -1,17 +1,17 @@
-/* BLE Example for SparkFun Pro nRF52840 Mini 
- *  
+/* BLE Example for SparkFun Pro nRF52840 Mini
+ *
  *  This example demonstrates how to use the Bluefruit
  *  library to both send and receive data to the
  *  nRF52840 via BLE.
- *  
+ *
  *  Using a BLE development app like Nordic's nRF Connect
  *  https://www.nordicsemi.com/eng/Products/Nordic-mobile-Apps/nRF-Connect-for-Mobile
  *  The BLE UART service can be written to to turn the
- *  on-board LED on/off, or read from to monitor the 
+ *  on-board LED on/off, or read from to monitor the
  *  status of the button.
- *  
+ *
  *  See the tutorial for more information:
- *  https://learn.sparkfun.com/tutorials/nrf52840-development-with-arduino-and-circuitpython#arduino-examples  
+ *  https://learn.sparkfun.com/tutorials/nrf52840-development-with-arduino-and-circuitpython#arduino-examples
 */
 #include <Arduino.h>
 #include <bluefruit.h>
@@ -105,7 +105,7 @@ volatile int lastButtonState = LOW;
 unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
 unsigned long debounceDelay = 50;    // the debounce time; increase if the output flickers
 
-SoftwareTimer neopixelTimer;
+SoftwareTimer neopixelTimer, batteryCheckTimer;
 
 void setup() {
   // Initialize hardware:
@@ -116,7 +116,7 @@ void setup() {
   pinMode(XENON_BLUE_LED_PIN, OUTPUT);
 //  digitalWrite(XENON_BLUE_LED_PIN, LOW);
 #endif
-  
+
   // antenna stuff
   pinMode(24, OUTPUT);
   pinMode(25, OUTPUT);
@@ -128,7 +128,7 @@ void setup() {
     digitalWrite(25,LOW);
   #endif
 
-  
+
   pinMode(LED_PIN, OUTPUT); // Turn on-board LED off
   digitalWrite(LED_PIN, LED_OFF);
 
@@ -154,7 +154,7 @@ void setup() {
 
   // Initialize Bluetooth:
   Bluefruit.begin();
-  
+
   // Set max power. Accepted values are: -40, -30, -20, -16, -12, -8, -4, 0, 4, 8
   Bluefruit.setTxPower(8);
   Bluefruit.setName("Catsfish");
@@ -176,7 +176,7 @@ void setup() {
 
 //  Bluefruit.ScanResponse.addName();
 
-  
+
   Bluefruit.Advertising.restartOnDisconnect(true);
 
 
@@ -188,7 +188,7 @@ void setup() {
 
   // use this if you want really fast advertising
    // Set advertising interval (in unit of 0.625ms):
-  Bluefruit.Advertising.setInterval(32, 32); 
+  Bluefruit.Advertising.setInterval(32, 32);
   // apple intervals are 152.5 ms, 211.25 ms, 318.75 ms, 417.5 ms, 546.25 ms, 760 ms, 852.5 ms, 1022.5 ms, 1285 ms - remember to divide by 0.625!
   // number of seconds in fast mode:
   Bluefruit.Advertising.setFastTimeout(0); // stay in fast mode forever
@@ -196,13 +196,13 @@ void setup() {
 
   // use this for less power usage
 //  /// Set advertising interval (in unit of 0.625ms):
-//  Bluefruit.Advertising.setInterval(338, 338); 
+//  Bluefruit.Advertising.setInterval(338, 338);
 //  // apple intervals are 152.5 ms, 211.25 ms, 318.75 ms, 417.5 ms, 546.25 ms, 760 ms, 852.5 ms, 1022.5 ms, 1285 ms - remember to divide by 0.625!
 //  // number of seconds in fast mode:
 //  Bluefruit.Advertising.setFastTimeout(0); // stay in fast mode forever
 
-  
-  Bluefruit.Advertising.start(0);  
+
+  Bluefruit.Advertising.start(0);
 
 
 
@@ -233,7 +233,7 @@ void setup() {
 // apple settings for background scanning.  300ms scanInterval and 30ms scanWindow
   Bluefruit.Scanner.setInterval(480, 48); // in units of 0.625 ms
 
-  
+
 //  Bluefruit.Scanner.useActiveScan(true);        // Request scan response data
   Bluefruit.Scanner.start(0);                   // 0 = Don't stop scanning after n seconds
 
@@ -244,8 +244,11 @@ void setup() {
   turnOffAll();
 
   // start neopixel timer
-  neopixelTimer.begin(10, neopixelTimerCallback); 
-  neopixelTimer.startFromISR();
+  neopixelTimer.begin(10, neopixelTimerCallback);
+  neopixelTimer.start();
+
+  batteryCheckTimer.begin(15000, batteryCheckCallback);
+  batteryCheckTimer.start();
 
 
 
@@ -262,9 +265,9 @@ void loop() {}
 //    printTemp();
 //    printBatteryLevel();
 //  }
-//  
+//
 ////  if (frame == 0) { loopCycles = -1; }
-//  
+//
 ////  // If data has come in via BLE:
 ////  if (bleuart.available()) {
 ////    uint8_t c;
@@ -311,18 +314,43 @@ void neopixelTimerCallback(TimerHandle_t _handle){
   int frame = loopCycles % FRAME_COUNT;
 
   showInRange(frame);
+}
 
-  if (loopCycles % 1000 == 0) {
-    ada_callback_fromISR(NULL, 0, switch_isr_callback); // Queue up a task with no extra variables and no arguments.
-                                                      // Every single interrupt is serviced, because internally, a
-                                                      // queue is used
+void batteryCheckCallback(TimerHandle_t _handle){
+  ada_callback_fromISR(NULL, 0, batteryCheckISRCallback); // Queue up a task with no extra variables and no arguments.
+}
+
+void batteryCheckISRCallback(){
+  // Get a raw ADC reading
+  float vbat_mv = readVBAT();
+
+  // Convert from raw mv to percentage (based on LIPO chemistry)
+  uint8_t vbat_per = mvToPercent(vbat_mv);
+
+  // Display the results
+  Serial.print("LIPO = ");
+  Serial.print(vbat_mv);
+  Serial.print(" mV (");
+  Serial.print(vbat_per);
+  Serial.println("%)");
+
+  if (vbat_per <= 25){
+    int flash_delay = vbat_per * 40; // if it's 25 percent, this is a 1000 second delay between flashes because 25 * 40 = 1000.
+    int flash_count = vbat_per < 10 ? 10 : 5;
+    for(int i = 0; i < flash_count; i++){
+      set_low_battery_led(true);
+      delay(25);
+      set_low_battery_led(false);
+      delay(flash_delay);
+    }
+  } else {
+    set_low_battery_led(false);
   }
+
+  printTemp();
 }
 
-void switch_isr_callback(void){
-  printTemp();
-  printBatteryLevel();
-}
+
 
 
 
@@ -347,19 +375,18 @@ void buttonPressed(){
 //        Serial.println("(buttonState == HIGH)");
         ledsOn = !ledsOn;
         digitalWrite(XENON_BLUE_LED_PIN, ledsOn);
-        
+
         if (ledsOn){
-          neopixelTimer.start();
+          exitSleepMode();
         } else {
-          neopixelTimer.stop();
-          turnOffAll();
+          enterSleepMode();
         }
       }
     }
   }
 
 
-  
+
   // If the switch changed, due to noise or pressing:
   if (reading != lastButtonState) {
     // reset the debouncing timer
@@ -370,63 +397,51 @@ void buttonPressed(){
   // it'll be the lastButtonState:
   lastButtonState = reading;
 
-  
+
+}
+
+void enterSleepMode(){
+  neopixelTimer.stop();
+  turnOffAll();
+}
+
+void exitSleepMode(){
+  neopixelTimer.start();
 }
 
 
 
-void checkButtonState(){
-  // read the state of the pushbutton value:
-  int reading = digitalRead(BUTTON_PIN);
+// void checkButtonState(){
+//   // read the state of the pushbutton value:
+//   int reading = digitalRead(BUTTON_PIN);
 
-  // If the switch changed, due to noise or pressing:
-  if (reading != lastButtonState) {
-    // reset the debouncing timer
-    lastDebounceTime = millis();
-  }
+//   // If the switch changed, due to noise or pressing:
+//   if (reading != lastButtonState) {
+//     // reset the debouncing timer
+//     lastDebounceTime = millis();
+//   }
 
-  if ((millis() - lastDebounceTime) > debounceDelay) {
-    // whatever the reading is at, it's been there for longer
-    // than the debounce delay, so take it as the actual current state:
-//    Serial.println("((millis() - lastDebounceTime) > debounceDelay)");
-    // if the button state has changed:
-    if (reading != buttonState) {
-//      Serial.println("(reading != buttonState)");
-      buttonState = reading;
+//   if ((millis() - lastDebounceTime) > debounceDelay) {
+//     // whatever the reading is at, it's been there for longer
+//     // than the debounce delay, so take it as the actual current state:
+// //    Serial.println("((millis() - lastDebounceTime) > debounceDelay)");
+//     // if the button state has changed:
+//     if (reading != buttonState) {
+// //      Serial.println("(reading != buttonState)");
+//       buttonState = reading;
 
-      // only toggle the LED if the new button state is HIGH
-      if (buttonState == HIGH) {
-//        Serial.println("(buttonState == HIGH)");
-        ledsOn = !ledsOn;
-      }
-    }
-  }
+//       // only toggle the LED if the new button state is HIGH
+//       if (buttonState == HIGH) {
+// //        Serial.println("(buttonState == HIGH)");
+//         ledsOn = !ledsOn;
+//       }
+//     }
+//   }
 
-  // save the reading.  Next time through the loop,
-  // it'll be the lastButtonState:
-  lastButtonState = reading;
-}
-
-void printBatteryLevel(){
-  // Get a raw ADC reading
-  float vbat_mv = readVBAT();
-
-  // Convert from raw mv to percentage (based on LIPO chemistry)
-  uint8_t vbat_per = mvToPercent(vbat_mv);
-
-  // Display the results
-  Serial.print("LIPO = ");
-  Serial.print(vbat_mv);
-  Serial.print(" mV (");
-  Serial.print(vbat_per);
-  Serial.println("%)");
-
-  if (vbat_per < 25){
-    set_low_battery_led(true);
-  } else {
-    set_low_battery_led(false);
-  }
-}
+//   // save the reading.  Next time through the loop,
+//   // it'll be the lastButtonState:
+//   lastButtonState = reading;
+// }
 
 uint8_t rssiToLedCount(int8_t rssi){
   return STRIP_LED_COUNT;
@@ -437,15 +452,15 @@ uint8_t rssiToLedCount(int8_t rssi){
   if (rssi > maxSignal){
     return STRIP_LED_COUNT;
   }
-  
+
   int range = -1 * (maxSignal - minSignal);
-  rssi = rssi - maxSignal; // make rssi start at 0 and go to 
+  rssi = rssi - maxSignal; // make rssi start at 0 and go to
 
 
   // non-float calculations
 //  Serial.print("non inverted percent: ");
 //  Serial.println((int)rssi * 100 / range);
-//  
+//
 //  int percent = 100 - ((int)rssi * 100 / range);
 //
 //  Serial.print("final inverted percent: ");
@@ -465,10 +480,10 @@ uint8_t rssiToLedCount(int8_t rssi){
 //  return finalValue;
 
 
-  // same calculations but using floats.  
+  // same calculations but using floats.
 //  Serial.print("non inverted percent: ");
 //  Serial.println((float)rssi / (float)range);
-  
+
   float percent = 1 - ((float)rssi / (float)range);
 
 //  Serial.print("final inverted percent: ");
@@ -504,12 +519,12 @@ void showInRange(int frame){
     // before assigning to each pixel:
     neopixel.setPixelColor(i, neopixel.gamma32(neopixel.ColorHSV(pixelHue)));
   }
-  
+
   // turn off rest
   for(int i = ledsToShowBasedOnRssi; i < STRIP_LED_COUNT; i++){
     neopixel.setPixelColor(i, neopixel.Color(0,0,0));
   }
-  
+
   neopixel.show(); // Update strip with new contents
 }
 
@@ -535,7 +550,7 @@ void turnOffAll(){
 ////    // before assigning to each pixel:
 ////    leds[i] = CHSV(pixelHue, 255, 255);
 ////  }
-////  
+////
 ////  // turn off rest
 ////  for(int i = ledsToShowBasedOnRssi; i < STRIP_LED_COUNT; i++){
 ////    leds[i] = CHSV(0,0,0);
@@ -549,7 +564,7 @@ void turnOffAll(){
 //  for(int i = 0; i < STRIP_LED_COUNT; i++){
 //    leds[i] = CHSV(0, 0, 0);
 //  }
-//  FastLED.show(); 
+//  FastLED.show();
 //}
 
 //
@@ -559,7 +574,7 @@ void turnOffAll(){
 //    if(i == frame) {
 //      p[0] = 255; p[1] = 0; p[2] = 255;
 //    } else if(i == (FRAME_COUNT - 1 - frame)) {
-//      p[0] = 255; p[1] = 0; p[2] = 0;      
+//      p[0] = 255; p[1] = 0; p[2] = 0;
 //    } else {
 //      p[0] = 0; p[1] = 0; p[2] = 0;
 //    }
@@ -574,7 +589,7 @@ void turnOffAll(){
 //  for(int i = 0; i < STRIP_LED_COUNT; i++){
 //    pixelBuffer[i*3] = 0;
 //    pixelBuffer[i*3+1] = 0;
-//    pixelBuffer[i*3+2] = 0;      
+//    pixelBuffer[i*3+2] = 0;
 //  }
 //  swapBuffers();
 //}
@@ -603,10 +618,10 @@ void basic_scan_callback(ble_gap_evt_adv_report_t* report)
   Serial.print(millis() / 1000);
   Serial.print(" seconds with rssi ");
   Serial.printf("%14s %d dBm\n", "RSSI", report->rssi);
-  
+
   deviceLastSeen = millis();
   ledsToShowBasedOnRssi = rssiToLedCount(report->rssi);
- 
+
 //  /* Complete Local Name */
 //  if(Bluefruit.Scanner.parseReportByType(report, BLE_GAP_AD_TYPE_COMPLETE_LOCAL_NAME, buffer, sizeof(buffer)))
 //  {
@@ -615,7 +630,7 @@ void basic_scan_callback(ble_gap_evt_adv_report_t* report)
 //    Serial.printf("%14s %d dBm\n", "RSSI", report->rssi);
 //    Serial.printf("%14s %s\n", "COMPLETE NAME", buffer);
 //    Serial.println();
-//    
+//
 //
 //    if (s.startsWith("Catsfish")){
 //      Serial.println("Device is in range");
@@ -667,7 +682,7 @@ void scan_callback(ble_gap_evt_adv_report_t* report)
   memset(buffer, 0, sizeof(buffer));
 
   deviceLastSeen = millis();
-  
+
   /* Display the timestamp and device address */
   if (report->type.scan_response)
   {
@@ -695,14 +710,14 @@ void scan_callback(ble_gap_evt_adv_report_t* report)
 
   /* Adv Type */
   Serial.printf("%14s ", "ADV TYPE");
-  if ( report->type.connectable ) 
+  if ( report->type.connectable )
   {
     Serial.print("Connectable ");
   }else
   {
     Serial.print("Non-connectable ");
   }
-  
+
   if ( report->type.directed )
   {
     Serial.println("directed");
@@ -758,7 +773,7 @@ void scan_callback(ble_gap_evt_adv_report_t* report)
   if ( len )
   {
     printUuid128List(buffer, len);
-  }  
+  }
 
   /* Check for BLE UART UUID */
   if ( Bluefruit.Scanner.checkReportForUuid(report, BLEUART_UUID_SERVICE) )
@@ -780,7 +795,7 @@ void scan_callback(ble_gap_evt_adv_report_t* report)
     Serial.printBuffer(buffer, len, '-');
     Serial.println();
     memset(buffer, 0, sizeof(buffer));
-  }  
+  }
 
   Serial.println();
 
@@ -813,7 +828,7 @@ void printUuid128List(uint8_t* buffer, uint8_t len)
     Serial.printf(fm, buffer[15-i]);
   }
 
-  Serial.println();  
+  Serial.println();
 }
 
 
