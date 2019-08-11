@@ -161,14 +161,13 @@ void setup() {
   // turn off all leds
   turnOffAll();
 
-  // start neopixel timer
+  // create timers
    neopixelTimer.begin(10, neopixelTimerCallback);
-   neopixelTimer.start();
 
-   batteryCheckTimer.begin(15000, batteryCheckCallback);
-   batteryCheckTimer.start();
+  batteryCheckTimer.begin(15000, batteryCheckCallback);
+  batteryCheckTimer.start();
 
-
+  exitSleepMode();
 
   suspendLoop();
 }
@@ -431,6 +430,8 @@ void buttonPressed(){
 }
 
 void enterSleepMode(){
+  Serial.println("enterSleepMode()");
+  
   neopixelTimer.stop();
   turnOffAll();
 
@@ -440,6 +441,8 @@ void enterSleepMode(){
 }
 
 void exitSleepMode(){
+  Serial.println("exitSleepMode()");
+  
   neopixelTimer.start();
 
   // start scanning
@@ -450,7 +453,7 @@ void exitSleepMode(){
 }
 
 void enterHeadlampMode(){
-  neopixel.setBrightness(100);
+  neopixel.setBrightness(255);
   for(int i = 0; i < STRIP_LED_COUNT; i ++){
     neopixel.setPixelColor(i, neopixel.Color(255,255,255));
   }
