@@ -137,6 +137,7 @@ void setup() {
   digitalWrite(LED_PIN, LED_OFF);
 
 
+  // button interrupt
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), buttonPressed, ISR_DEFERRED | CHANGE);
 
@@ -151,7 +152,83 @@ void setup() {
 //  FastLED.setBrightness(BRIGHTNESS);
 
 
+  // initBluetooth();
 
+
+  // Get a single ADC sample and throw it away
+  readVBAT();
+
+  // turn off all leds
+  turnOffAll();
+
+  // start neopixel timer
+  // neopixelTimer.begin(10, neopixelTimerCallback);
+  // neopixelTimer.start();
+
+  // batteryCheckTimer.begin(15000, batteryCheckCallback);
+  // batteryCheckTimer.start();
+
+
+
+  suspendLoop();
+}
+
+void loop() {
+}
+
+//void loop() {
+//  loopCycles++;
+//  int frame = loopCycles % FRAME_COUNT;
+//
+//  if (loopCycles % 1000 == 0) {
+//    printTemp();
+//    printBatteryLevel();
+//  }
+//
+////  if (frame == 0) { loopCycles = -1; }
+//
+////  // If data has come in via BLE:
+////  if (bleuart.available()) {
+////    uint8_t c;
+////    // use bleuart.read() to read a character sent over BLE
+////    c = (uint8_t) bleuart.read();
+////    // Print out the character for debug purposes:
+////    Serial.write(c);
+////
+////    // If the character is one of our expected values,
+////    // do something:
+////    switch (c) {
+////      // 0 number or character, turn the LED off:
+////      case 0:
+////      case '0':
+////        digitalWrite(LED_PIN, LED_OFF);
+////        break;
+////      // 1 number or character, turn the LED on:
+////      case 1:
+////      case '1':
+////        digitalWrite(LED_PIN, LED_ON);
+////        break;
+////      default:
+////        break;
+////    }
+////  }
+//
+//  //checkButtonState();
+//
+//  if (millis() - deviceLastSeen < 1000 && ledsOn == HIGH){
+//    digitalWrite(LED_PIN, LED_ON);
+////    Serial.println("yes");
+//    showInRange(frame);
+//  } else {
+//    digitalWrite(LED_PIN, LED_OFF);
+////    Serial.println("no");
+//    turnOffAll();
+//  }
+//
+//  delay(10);
+//}
+
+void initBluetooth(){
   // Uncomment the code below to disable sharing
   // the connection LED on pin 7.
   Bluefruit.autoConnLed(false);
@@ -239,78 +316,7 @@ void setup() {
 
 
 //  Bluefruit.Scanner.useActiveScan(true);        // Request scan response data
-
-  // Get a single ADC sample and throw it away
-  readVBAT();
-
-  // turn off all leds
-  turnOffAll();
-
-  // start neopixel timer
-  neopixelTimer.begin(10, neopixelTimerCallback);
-  neopixelTimer.start();
-
-  batteryCheckTimer.begin(15000, batteryCheckCallback);
-  batteryCheckTimer.start();
-
-
-
-  suspendLoop();
 }
-
-void loop() {}
-
-//void loop() {
-//  loopCycles++;
-//  int frame = loopCycles % FRAME_COUNT;
-//
-//  if (loopCycles % 1000 == 0) {
-//    printTemp();
-//    printBatteryLevel();
-//  }
-//
-////  if (frame == 0) { loopCycles = -1; }
-//
-////  // If data has come in via BLE:
-////  if (bleuart.available()) {
-////    uint8_t c;
-////    // use bleuart.read() to read a character sent over BLE
-////    c = (uint8_t) bleuart.read();
-////    // Print out the character for debug purposes:
-////    Serial.write(c);
-////
-////    // If the character is one of our expected values,
-////    // do something:
-////    switch (c) {
-////      // 0 number or character, turn the LED off:
-////      case 0:
-////      case '0':
-////        digitalWrite(LED_PIN, LED_OFF);
-////        break;
-////      // 1 number or character, turn the LED on:
-////      case 1:
-////      case '1':
-////        digitalWrite(LED_PIN, LED_ON);
-////        break;
-////      default:
-////        break;
-////    }
-////  }
-//
-//  //checkButtonState();
-//
-//  if (millis() - deviceLastSeen < 1000 && ledsOn == HIGH){
-//    digitalWrite(LED_PIN, LED_ON);
-////    Serial.println("yes");
-//    showInRange(frame);
-//  } else {
-//    digitalWrite(LED_PIN, LED_OFF);
-////    Serial.println("no");
-//    turnOffAll();
-//  }
-//
-//  delay(10);
-//}
 
 void neopixelTimerCallback(TimerHandle_t _handle){
   loopCycles++;
@@ -428,19 +434,19 @@ void enterSleepMode(){
   neopixelTimer.stop();
   turnOffAll();
 
-  Bluefruit.Scanner.stop();
+  // Bluefruit.Scanner.stop();
 
-  Bluefruit.Advertising.stop();
+  // Bluefruit.Advertising.stop();
 }
 
 void exitSleepMode(){
   neopixelTimer.start();
 
   // start scanning
-  Bluefruit.Scanner.start(0);                   // 0 = Don't stop scanning after n seconds
+  // Bluefruit.Scanner.start(0);                   // 0 = Don't stop scanning after n seconds
 
-  // start advertising
-  Bluefruit.Advertising.start(0);
+  // // start advertising
+  // Bluefruit.Advertising.start(0);
 }
 
 void enterHeadlampMode(){
