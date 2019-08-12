@@ -152,7 +152,7 @@ void setup() {
 //  FastLED.setBrightness(BRIGHTNESS);
 
 
-   initBluetooth();
+  initBluetooth();
 
 
   // Get a single ADC sample and throw it away
@@ -162,7 +162,7 @@ void setup() {
   turnOffAll();
 
   // create timers
-   neopixelTimer.begin(10, neopixelTimerCallback);
+  neopixelTimer.begin(10, neopixelTimerCallback);
 
   batteryCheckTimer.begin(15000, batteryCheckCallback);
   batteryCheckTimer.start();
@@ -172,8 +172,16 @@ void setup() {
   suspendLoop();
 }
 
-void loop() {
-}
+void loop(){}
+
+//void loop() {
+//  if (ledsOn){
+//    rainbow_loop(10, 20);
+//  } else {
+//    turnOffAll();
+//    delay(100);
+//  }
+//}
 
 //void loop() {
 //  loopCycles++;
@@ -591,77 +599,6 @@ void turnOffAll(){
 }
 
 
-//void showInRange(int frame){
-////  long firstPixelHue = frame * 256;
-////  for(int i=0; i<ledsToShowBasedOnRssi; i++) { // For each pixel in strip...
-////    // Offset pixel hue by an amount to make one full revolution of the
-////    // color wheel (range of 65536) along the length of the strip
-////    // (strip.numPixels() steps):
-////    uint8_t pixelHue = firstPixelHue + (i * 256 / ledsToShowBasedOnRssi);
-////    // strip.ColorHSV() can take 1 or 3 arguments: a hue (0 to 65535) or
-////    // optionally add saturation and value (brightness) (each 0 to 255).
-////    // Here we're using just the single-argument hue variant. The result
-////    // is passed through strip.gamma32() to provide 'truer' colors
-////    // before assigning to each pixel:
-////    leds[i] = CHSV(pixelHue, 255, 255);
-////  }
-////
-////  // turn off rest
-////  for(int i = ledsToShowBasedOnRssi; i < STRIP_LED_COUNT; i++){
-////    leds[i] = CHSV(0,0,0);
-////  }
-//  fill_rainbow( leds, STRIP_LED_COUNT, gHue, 7);
-//  FastLED.show(); // Update strip with new contents
-//}
-//
-//
-//void turnOffAll(){
-//  for(int i = 0; i < STRIP_LED_COUNT; i++){
-//    leds[i] = CHSV(0, 0, 0);
-//  }
-//  FastLED.show();
-//}
-
-//
-//void showInRange(int frame){
-//  int p[3];
-//  for(int i = 0; i < STRIP_LED_COUNT; i++){
-//    if(i == frame) {
-//      p[0] = 255; p[1] = 0; p[2] = 255;
-//    } else if(i == (FRAME_COUNT - 1 - frame)) {
-//      p[0] = 255; p[1] = 0; p[2] = 0;
-//    } else {
-//      p[0] = 0; p[1] = 0; p[2] = 0;
-//    }
-//    for(int j = 0; j < 3; j++) {
-//      pixelBuffer[i*3 + j] = p[j];
-//    }
-//  }
-//  swapBuffers();
-//}
-//
-//void turn_off(){
-//  for(int i = 0; i < STRIP_LED_COUNT; i++){
-//    pixelBuffer[i*3] = 0;
-//    pixelBuffer[i*3+1] = 0;
-//    pixelBuffer[i*3+2] = 0;
-//  }
-//  swapBuffers();
-//}
-
-//void swapBuffers()
-//{
-//  uint8_t *base_addr = pixelBuffer;
-//  int pixelIndex = 0;
-//
-//  for (int i = 0; i < STRIP_LED_COUNT; i++) {
-//    neopixel.setPixelColor(pixelIndex, neopixel.Color(*base_addr, *(base_addr+1), *(base_addr+2)));
-//    base_addr+=3;
-//    pixelIndex++;
-//  }
-//  neopixel.show();
-//}
-
 void basic_scan_callback(ble_gap_evt_adv_report_t* report)
 {
   PRINT_LOCATION();
@@ -669,7 +606,9 @@ void basic_scan_callback(ble_gap_evt_adv_report_t* report)
   uint8_t buffer[32];
   memset(buffer, 0, sizeof(buffer));
 
-  Serial.print("Device seen at ");
+  Serial.print("Device ");
+  Serial.printBufferReverse(report->peer_addr.addr, 6, ':');
+  Serial.print(" seen at ");
   Serial.print(millis() / 1000);
   Serial.print(" seconds with rssi ");
   Serial.printf("%14s %d dBm\n", "RSSI", report->rssi);
