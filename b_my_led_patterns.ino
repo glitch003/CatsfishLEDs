@@ -37,12 +37,6 @@ void displayIdleRainbow(int frame){
     // before assigning to each pixel:
     neopixel.setPixelColor(i, neopixel.gamma32(neopixel.ColorHSV(pixelHue)));
   }
-
-  // turn off rest
-  for(int i = ledsToShowBasedOnRssi; i < STRIP_LED_COUNT; i++){
-    neopixel.setPixelColor(i, neopixel.Color(0,0,0));
-  }
-
   neopixel.show(); // Update strip with new contents
 }
 
@@ -75,4 +69,41 @@ void turnOffAll(){
     neopixel.setPixelColor(i, neopixel.Color(0,0,0));
   }
   neopixel.show();
+}
+
+
+
+
+
+
+void loopThroughAllPatterns(int ledMode){
+    if (ledMode == 0) {one_color_all(0,0,0);}                 //---STRIP OFF - "0"
+  else if (ledMode == 1) {one_color_all(255,255,255);}      //---STRIP SOLID WHITE
+  else if (ledMode == 2) {rainbow_fade(20);}                //---STRIP RAINBOW FADE
+  else if (ledMode == 3) {rainbow_loop(10, 20);}            //---RAINBOW LOOP
+  else if (ledMode == 4) {random_burst(20);}                //---RANDOM
+  else if (ledMode == 5) {color_bounce(20);}                //---CYLON v1
+  else if (ledMode == 6) {color_bounceFADE(20);}            //---CYLON v2
+  else if (ledMode == 7) {police_lightsONE(40);}            //---POLICE SINGLE
+  else if (ledMode == 8) {police_lightsALL(40);}            //---POLICE SOLID
+  else if (ledMode == 9) {flicker(200,255);}                //---STRIP FLICKER 
+  else if (ledMode == 10) {pulse_one_color_all(0, 10);}     //--- PULSE COLOR BRIGHTNESS
+  else if (ledMode == 11) {pulse_one_color_all_rev(0, 10);} //--- PULSE COLOR SATURATION   
+  else if (ledMode == 12) {fade_vertical(240, 60);}         //--- VERTICAL SOMETHING
+//  if (ledMode == 13) {rule30(100);}                       //--- CELL AUTO - RULE 30 (RED)
+  else if (ledMode == 14) {random_march(100);}              //--- MARCH RANDOM COLORS
+  else if (ledMode == 15) {rwb_march(100);}                 //--- MARCH RWB COLORS
+  else if (ledMode == 16) {radiation(120, 60);}             //--- RADIATION SYMBOL (OR SOME APPROXIMATION)
+  else if (ledMode == 17) {color_loop_vardelay();}          //--- VARIABLE DELAY LOOP
+  else if (ledMode == 18) {white_temps();}                  //--- WHITE TEMPERATURES
+  else if (ledMode == 19) {sin_bright_wave(240, 35);}       //--- SIN WAVE BRIGHTNESS
+  else if (ledMode == 20) {pop_horizontal(300, 100);}       //--- POP LEFT/RIGHT
+  else if (ledMode == 21) {quad_bright_curve(240, 100);}    //--- QUADRATIC BRIGHTNESS CURVE  
+  else if (ledMode == 22) {flame();}                        //--- FLAME-ISH EFFECT
+  else if (ledMode == 23) {rainbow_vertical(10, 20);}       //--- VERITCAL RAINBOW
+  else if (ledMode == 24) {pacman(100);}                    //--- PACMAN
+  else if (ledMode == 25) {color_loop_randdelay();}         //--- VARIABLE DELAY LOOP
+  else if (ledMode == 26) {swiss_cross(100);}               //--- SWISS CROSS
+  else if (ledMode == 27) {germany(100);}                   //--- GERMANY FLAG
+
 }

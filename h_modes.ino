@@ -8,13 +8,17 @@ void setModeBasedOnNumberOfPresses(int pressCount){
     mode = 2;
     exitProximityMode();
     enterHeadlampMode();
-  }
+  } else if (pressCount == 3) {
+    mode = 3;
+    turnOffAll();
+    enterProximityMode();
+  } 
 
 }
 
 
 void enterSleepMode(){
-  Serial.println("enterSleepMode()");
+//  Serial.println("enterSleepMode()");
   
   neopixelTimer.stop();
   turnOffAll();
@@ -24,10 +28,13 @@ void enterSleepMode(){
   Bluefruit.Scanner.stop();
 
   Bluefruit.Advertising.stop();
+
+  // show battery level
+  displayBatteryLevel();
 }
 
 void enterProximityMode(){
-  Serial.println("exitSleepMode()");
+//  Serial.println("enterProximityMode()");
   
   neopixelTimer.start();
 

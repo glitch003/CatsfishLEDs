@@ -44,3 +44,36 @@ uint8_t mvToPercent(float mvolts) {
   mvolts -= 3600;
   return 10 + (mvolts * 0.15F );  // thats mvolts /6.66666666
 }
+
+
+void displayBatteryLevel(){
+  turnOffAll();
+  neopixel.setBrightness(brightness);
+
+  // Get a raw ADC reading
+  float vbat_mv = readVBAT();
+
+  // Convert from raw mv to percentage (based on LIPO chemistry)
+  uint8_t vbat_per = mvToPercent(vbat_mv);
+
+  int ledLevel = STRIP_LED_COUNT * (vbat_per / 100.0F);
+  uint32_t pixelColor = neopixel.Color(0,255,0);
+  if (vbat_per < LOW_BATTERY_PERCENTAGE){
+    pixelColor = neopixel.Color(0,255,0);
+  } else if(vbat_per < 60){
+    pixelColor = neopixel.Color(255,255,0);
+  }
+
+  for(int i = 0; i < ledLevel; i++){
+    neopixel.setPixelColor(i,pixelColor);
+    delay(100);
+    neopixel.show();
+  }
+  delay(2000);
+  for(int i = ledLevel - 1; i >= 0; i--){
+    neopixel.setPixelColor(i,0,0,0);
+    delay(100);
+    neopixel.show();
+  }
+  
+}

@@ -56,6 +56,8 @@ uint32_t vbat_pin = 5;             // A7 for feather nRF52832, A6 for nRF52840
 
 #define REAL_VBAT_MV_PER_LSB (VBAT_DIVIDER_COMP * VBAT_MV_PER_LSB)
 
+#define LOW_BATTERY_PERCENTAGE 20
+
 
 
 
@@ -76,8 +78,17 @@ uint8_t brightness = 10;
 unsigned long loopCycles = 0;
 
 unsigned long deviceLastSeen = 0;
+unsigned long devicesInRange = 0;
 
-uint8_t ledsToShowBasedOnRssi = STRIP_LED_COUNT;
+struct SeenDevice {
+  unsigned long lastSeenAt;
+  int8_t rssi;
+  uint8_t addr[6];
+};
+
+SeenDevice seenDevices[128];
+
+uint8_t ledsToShowBasedOnRssi = 0;
 
 uint8_t gHue = 0; // rotating "base color" used by many of the patterns
 
@@ -87,7 +98,6 @@ int mode = 1;
 // 1 = proximity mode
 // 2 = headlamp mode
 // 3 = range test mode
-// 4 = pattern test mode
 
 
 Adafruit_NeoPixel neopixel = Adafruit_NeoPixel(STRIP_LED_COUNT, STRIP_PIN, NEO_GRB + NEO_KHZ800);
@@ -102,9 +112,8 @@ Adafruit_NeoPixel neopixel = Adafruit_NeoPixel(STRIP_LED_COUNT, STRIP_PIN, NEO_G
 
 
 #define BUTTON_PIN 11
-volatile int buttonState = 0;
-volatile byte ledsOn = HIGH;
-volatile int lastButtonState = LOW;
+volatile int buttonState = 1;
+volatile int lastButtonState = HIGH;
 
 
 // the following variables are unsigned long's because the time, measured in miliseconds,

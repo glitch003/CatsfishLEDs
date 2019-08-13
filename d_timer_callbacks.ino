@@ -6,8 +6,14 @@ void neopixelTimerCallback(TimerHandle_t _handle){
   int frame = loopCycles % FRAME_COUNT;
 
   neopixel.setBrightness(brightness);
-  displayProximityCount(1, frame);
-//  showInRange(frame);
+  if (mode == 1){
+    // proximity mode
+//    displayProximityCount(1, frame);
+    displayIdleRainbow(frame);
+  } else if (mode == 3){
+    // range test mode
+    displayRangeTestRainbow(frame);
+  }
 }
 
 void batteryCheckCallback(TimerHandle_t _handle){
@@ -28,7 +34,7 @@ void batteryCheckISRCallback(){
   Serial.print(vbat_per);
   Serial.println("%)");
 
-  if (vbat_per <= 25){
+  if (vbat_per <= LOW_BATTERY_PERCENTAGE){
     int flash_delay = vbat_per * 40; // if it's 25 percent, this is a 1000 second delay between flashes because 25 * 40 = 1000.
     int flash_count = vbat_per < 10 ? 10 : 5;
     for(int i = 0; i < flash_count; i++){

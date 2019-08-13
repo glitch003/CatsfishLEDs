@@ -92,8 +92,8 @@ void initBluetooth(){
 
 
 uint8_t rssiToLedCount(int8_t rssi){
-  return STRIP_LED_COUNT;
-  // rssi range is about -33 to -100
+
+  // rssi range is about -40 to -100
   int8_t maxSignal = -40;
   int8_t minSignal = -100;
 
@@ -175,40 +175,12 @@ void basic_scan_callback(ble_gap_evt_adv_report_t* report)
   deviceLastSeen = millis();
   ledsToShowBasedOnRssi = rssiToLedCount(report->rssi);
 
-//  /* Complete Local Name */
-//  if(Bluefruit.Scanner.parseReportByType(report, BLE_GAP_AD_TYPE_COMPLETE_LOCAL_NAME, buffer, sizeof(buffer)))
-//  {
-//    String s = String((char*)buffer);
-//
-//    Serial.printf("%14s %d dBm\n", "RSSI", report->rssi);
-//    Serial.printf("%14s %s\n", "COMPLETE NAME", buffer);
-//    Serial.println();
-//
-//
-//    if (s.startsWith("Catsfish")){
-//      Serial.println("Device is in range");
-////      Serial.printf("%14s %d dBm\n", "RSSI", report->rssi);
-////      Serial.printf("%14s %s\n", "COMPLETE NAME", buffer);
-////      Serial.println();
-//
-////      if (report->rssi > -60){
-//        deviceLastSeen = millis();
-////      }
-//    }
-//    memset(buffer, 0, sizeof(buffer));
-//
-//
-//  }
-
 
 
   // For Softdevice v6: after received a report, scanner will be paused
   // We need to call Scanner resume() to continue scanning
   Bluefruit.Scanner.resume();
 }
-
-
-
 
 
 
