@@ -87,6 +87,7 @@ struct SeenDevice {
 };
 
 SeenDevice seenDevices[128];
+uint8_t seenDevicesCount = 0;
 
 uint8_t ledsToShowBasedOnRssi = 0;
 
@@ -131,9 +132,9 @@ void setup() {
   Serial.begin(115200); // Serial is the USB serial port
 
 #ifdef XENON
-  // the particle xenon has 2 user controllable LEDS - one RGB and one Blue.  We kill the blue here.
+  // the particle xenon has 2 user controllable LEDS - one RGB and one Blue.
   pinMode(XENON_BLUE_LED_PIN, OUTPUT);
-//  digitalWrite(XENON_BLUE_LED_PIN, LOW);
+  digitalWrite(XENON_BLUE_LED_PIN, HIGH);
 #endif
 
   // antenna stuff

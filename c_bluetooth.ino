@@ -79,11 +79,11 @@ void initBluetooth(){
 
 // use this if you want really fast scanning
 // apple settings for foreground scanning.  scan interval of 40ms and scan window of 30ms
-//  Bluefruit.Scanner.setInterval(64, 48); // in units of 0.625 ms
+  Bluefruit.Scanner.setInterval(64, 48); // in units of 0.625 ms
 
 // use this for less power usage
 // apple settings for background scanning.  300ms scanInterval and 30ms scanWindow
-  Bluefruit.Scanner.setInterval(480, 48); // in units of 0.625 ms
+//  Bluefruit.Scanner.setInterval(480, 48); // in units of 0.625 ms
 
 
 //  Bluefruit.Scanner.useActiveScan(true);        // Request scan response data
@@ -174,6 +174,38 @@ void basic_scan_callback(ble_gap_evt_adv_report_t* report)
 
   deviceLastSeen = millis();
   ledsToShowBasedOnRssi = rssiToLedCount(report->rssi);
+
+  // insert or update in seenDevices
+  int foundIndex = -1;
+  for(int i = 0; i < seenDevicesCount; i++){
+    SeenDevice s = seenDevices[i];
+    
+    // compare mac addresses
+    if (memcmp(report->peer_addr.addr, s.addr, 6) == 0) {
+      foundIndex = i;
+      break;
+    }
+  }
+
+  if (foundIndex == -1){
+    // element not found - insert element at the end of the array
+          
+    memcpy(seenDevices[seenDevicesCount].addr, report->peer_addr.addr, 6);
+    // set lastSeenAt and rssi
+    seenDevices[seenDevicesCount].lastSeenAt = millis();
+    seenDevices[seenDevicesCount].rssi = report->rssi;
+
+    seenDevicesCount++;
+  } else {
+    // just set lastSeenAt and rssi
+    seenDevices[foundIndex].lastSeenAt = millis();
+    seenDevices[foundIndex].rssi = report->rssi;
+  }
+
+  
+
+  
+
 
 
 

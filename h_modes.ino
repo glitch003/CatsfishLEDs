@@ -12,8 +12,7 @@ void setModeBasedOnNumberOfPresses(int pressCount){
     mode = 3;
     turnOffAll();
     enterProximityMode();
-  } 
-
+  }
 }
 
 
