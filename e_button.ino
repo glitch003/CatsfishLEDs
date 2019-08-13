@@ -14,11 +14,9 @@ void buttonPressed(){
     if (reading != buttonState) {
 //      Serial.println("(reading != buttonState)");
       buttonState = reading;
-
+      
       if (buttonState == LOW) {
-//         volatile unsigned long lastPressTime = 0;
-// const unsigned long maxTimeInbetweenMultipleClicks = 1000;
-// volatile int pressCount = 0;
+        // button was pressed down
         if ((millis() - lastPressTime) < maxTimeInbetweenMultipleClicks){
           pressCount++;
         } else {
@@ -27,24 +25,15 @@ void buttonPressed(){
 
         lastPressTime = millis();
       } else {
-        if (pressCount == 1) {
-          ledsOn = !ledsOn;
-          digitalWrite(XENON_BLUE_LED_PIN, ledsOn);
-
-          if (ledsOn){
-            exitSleepMode();
-          } else {
-            enterSleepMode();
-          }
-        } else if (pressCount == 2) {
-          // if LEDS are on, headlamp mode will not work, because the LEDs will be brighter.  so turn them off.
-          if (ledsOn){
-            enterSleepMode();
-            ledsOn = LOW;
-            digitalWrite(XENON_BLUE_LED_PIN, ledsOn);
-          }
-
-          enterHeadlampMode();
+        // button was released
+        if (mode != 0 && pressCount == 1){
+          // turn off if we are doing anything and the user presses the button
+          enterSleepMode();
+          mode = 0;
+        } else {
+          // wake up!
+          digitalWrite(XENON_BLUE_LED_PIN, HIGH);
+          setModeBasedOnNumberOfPresses(pressCount);
         }
       }
     }
@@ -61,6 +50,4 @@ void buttonPressed(){
    // save the reading.  Next time through the loop,
   // it'll be the lastButtonState:
   lastButtonState = reading;
-
-
 }

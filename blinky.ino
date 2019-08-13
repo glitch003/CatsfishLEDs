@@ -79,9 +79,15 @@ unsigned long deviceLastSeen = 0;
 
 uint8_t ledsToShowBasedOnRssi = STRIP_LED_COUNT;
 
-//CRGB leds[STRIP_LED_COUNT];
-
 uint8_t gHue = 0; // rotating "base color" used by many of the patterns
+
+int mode = 1;
+// modes are:
+// 0 = off
+// 1 = proximity mode
+// 2 = headlamp mode
+// 3 = range test mode
+// 4 = pattern test mode
 
 
 Adafruit_NeoPixel neopixel = Adafruit_NeoPixel(STRIP_LED_COUNT, STRIP_PIN, NEO_GRB + NEO_KHZ800);
@@ -167,7 +173,7 @@ void setup() {
   batteryCheckTimer.begin(15000, batteryCheckCallback);
   batteryCheckTimer.start();
 
-  exitSleepMode();
+  enterProximityMode();
 
   suspendLoop();
 }
