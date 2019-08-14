@@ -14,6 +14,8 @@ void neopixelTimerCallback(TimerHandle_t _handle){
       brightness = 100;
       neopixel.setBrightness(brightness);
       displayProximityCount(devicesInRange, frame);
+//      displayProximityCountWithRssiBrightness(frame);
+//      displayProximityCountWithRssiBrightnessSingleColor();
     } else {
       brightness = 10;
       neopixel.setBrightness(brightness);

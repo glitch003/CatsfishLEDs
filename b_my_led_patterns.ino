@@ -1,3 +1,83 @@
+void displayProximityCountWithRssiBrightnessSingleColor(){  
+  // turn off all
+  for(int i = 0; i < STRIP_LED_COUNT; i++){
+    neopixel.setPixelColor(i, neopixel.Color(0,0,0));
+  }
+
+  int rssiForDevices[128];
+
+  // count how many devices we've seen recently and collect their rssi's
+  int inRange = 0;
+  for(int i = 0; i < seenDevicesCount; i++){
+    SeenDevice s = seenDevices[i];
+    if ((millis() - s.lastSeenAt) < 5000){ // timeout
+      rssiForDevices[inRange] = s.rssi;
+      inRange++;
+    }
+  }
+
+
+  long firstPixelHue = 10 * 256;
+
+  for(int i = 0; i < inRange; i++){
+    // use this if you want different colors for each led
+//    int pixelHue = firstPixelHue + (i * 65536L / inRange);
+    
+    int pixelHue = firstPixelHue;
+
+    // set ledIndex based on how many are in range
+    int ledIndex = (STRIP_LED_COUNT / inRange) * i;
+    // modify that based on the frame to make it spin
+    ledIndex = (ledIndex + (loopCycles/200)) % STRIP_LED_COUNT;
+
+    int brightnessValue = rssiToBrightness(rssiForDevices[i]);
+    
+    neopixel.setPixelColor(ledIndex, neopixel.gamma32(neopixel.ColorHSV(pixelHue, 255, brightnessValue)));
+  }
+  neopixel.show();
+}
+
+
+void displayProximityCountWithRssiBrightness(int frame){  
+  // turn off all
+  for(int i = 0; i < STRIP_LED_COUNT; i++){
+    neopixel.setPixelColor(i, neopixel.Color(0,0,0));
+  }
+
+  int rssiForDevices[128];
+
+  // count how many devices we've seen recently and collect their rssi's
+  int inRange = 0;
+  for(int i = 0; i < seenDevicesCount; i++){
+    SeenDevice s = seenDevices[i];
+    if ((millis() - s.lastSeenAt) < 5000){ // timeout
+      rssiForDevices[inRange] = s.rssi;
+      inRange++;
+    }
+  }
+
+
+  long firstPixelHue = frame * 256;
+
+  for(int i = 0; i < inRange; i++){
+    // use this if you want different colors for each led
+//    int pixelHue = firstPixelHue + (i * 65536L / inRange);
+    
+    int pixelHue = firstPixelHue;
+
+    // set ledIndex based on how many are in range
+    int ledIndex = (STRIP_LED_COUNT / inRange) * i;
+    // modify that based on the frame to make it spin
+    ledIndex = (ledIndex + (loopCycles/200)) % STRIP_LED_COUNT;
+
+    int brightnessValue = rssiToBrightness(rssiForDevices[i]);
+    
+    neopixel.setPixelColor(ledIndex, neopixel.gamma32(neopixel.ColorHSV(pixelHue, 255, brightnessValue)));
+  }
+  neopixel.show();
+}
+
+
 void displayProximityCount(int inRange, int frame){  
   // turn off all
   for(int i = 0; i < STRIP_LED_COUNT; i++){
