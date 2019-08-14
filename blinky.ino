@@ -73,7 +73,7 @@ uint32_t vbat_pin = 5;             // A7 for feather nRF52832, A6 for nRF52840
 #define STRIP_LED_COUNT 16
 #define FRAME_COUNT 1280
 uint8_t *pixelBuffer = NULL;
-uint8_t brightness = 10;
+uint8_t brightness = 100;
 
 unsigned long loopCycles = 0;
 
@@ -122,7 +122,7 @@ volatile int lastButtonState = HIGH;
 volatile unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
 const unsigned long debounceDelay = 50;    // the debounce time; increase if the output flickers
 volatile unsigned long lastPressTime = 0;
-const unsigned long maxTimeInbetweenMultipleClicks = 1000;
+const unsigned long maxTimeInbetweenMultipleClicks = 3000;
 volatile int pressCount = 0;
 
 SoftwareTimer neopixelTimer, batteryCheckTimer;

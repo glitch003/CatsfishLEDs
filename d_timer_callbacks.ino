@@ -5,26 +5,31 @@ void neopixelTimerCallback(TimerHandle_t _handle){
   loopCycles++;
   int frame = loopCycles % FRAME_COUNT;
 
-  neopixel.setBrightness(brightness);
+  
   if (mode == 1){
     // proximity mode
 
-    // count how many devices we've seen recently
-    int devicesInRange = 0;
-    for(int i = 0; i < seenDevicesCount; i++){
-      SeenDevice s = seenDevices[i];
-      if ((millis() - s.lastSeenAt) < 5000){ // timeout
-        devicesInRange++;
-      }
-    }
+    int devicesInRange = countDevicesInRange();
     if (devicesInRange > 0){
+      brightness = 100;
+      neopixel.setBrightness(brightness);
       displayProximityCount(devicesInRange, frame);
     } else {
+      brightness = 10;
+      neopixel.setBrightness(brightness);
       displayIdleRainbow(frame);
     }
   } else if (mode == 3){
     // range test mode
-    displayRangeTestRainbow(frame);
+    int devicesInRange = countDevicesInRange();
+
+    if (devicesInRange > 0){
+      brightness = 50;
+      neopixel.setBrightness(brightness);
+      displayRangeTestRainbow(frame);
+    } else {
+      turnOffAll();
+    }
   }
 }
 
