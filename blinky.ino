@@ -88,6 +88,7 @@ struct SeenDevice {
 
 SeenDevice seenDevices[128];
 uint8_t seenDevicesCount = 0;
+#define PROXIMITY_TIMEOUT 5000
 
 uint8_t ledsToShowBasedOnRssi = 0;
 
@@ -110,6 +111,8 @@ Adafruit_NeoPixel neopixel = Adafruit_NeoPixel(STRIP_LED_COUNT, STRIP_PIN, NEO_G
 //   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
 //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
 //   NEO_RGBW    Pixels are wired for RGBW bitstream (NeoPixel RGBW products)
+
+#define NEOPIXEL_TIMER_SPEED 10
 
 
 #define BUTTON_PIN 11
@@ -178,7 +181,7 @@ void setup() {
   turnOffAll();
 
   // create timers
-  neopixelTimer.begin(10, neopixelTimerCallback);
+  neopixelTimer.begin(NEOPIXEL_TIMER_SPEED, neopixelTimerCallback);
 
   batteryCheckTimer.begin(15000, batteryCheckCallback);
   batteryCheckTimer.start();

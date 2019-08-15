@@ -3,7 +3,7 @@ int countDevicesInRange(){
   int devicesInRange = 0;
   for(int i = 0; i < seenDevicesCount; i++){
     SeenDevice s = seenDevices[i];
-    if ((millis() - s.lastSeenAt) < 5000){ // timeout
+    if ((millis() - s.lastSeenAt) < PROXIMITY_TIMEOUT){ // timeout
       devicesInRange++;
     }
   }
@@ -45,6 +45,44 @@ uint8_t rssiToBrightness(int8_t rssi){
 
     if (rssi < minSignal || finalValue == 0) {
       return 1; // never show 0 brightness.  the device is in range, it should always show at least 1.
+    }
+
+  return finalValue;
+
+
+}
+
+
+int rssiToNextHeartbeatFrame(int8_t rssi){
+
+  // rssi range is about -40 to -100
+  int8_t maxSignal = -40;
+  int8_t minSignal = -100;
+
+  if (rssi > maxSignal){
+    return 5;
+  }
+
+  int range = -1 * (maxSignal - minSignal);
+  rssi = rssi - maxSignal; // make rssi start at 0 and go to
+
+//  Serial.print("non inverted percent: ");
+//  Serial.println((float)rssi / (float)range);
+
+  float percent = 1 - ((float)rssi / (float)range);
+
+//  Serial.print("final inverted percent: ");
+//  Serial.println(percent);
+
+
+
+  int finalValue = round(percent * (float)100);
+
+//  Serial.print("final value of led count: ");
+//  Serial.println(finalValue);
+
+    if (rssi < minSignal || finalValue == 0) {
+      return 100; // never show 0 brightness.  the device is in range, it should always show at least 1.
     }
 
   return finalValue;

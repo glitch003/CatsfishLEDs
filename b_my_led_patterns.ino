@@ -1,3 +1,51 @@
+void displayProximityCountHeartbeat(int frame){
+  // turn off all
+  for(int i = 0; i < STRIP_LED_COUNT; i++){
+    neopixel.setPixelColor(i, neopixel.Color(0,0,0));
+  }
+
+  int pixelOnFrames = 20;
+  
+  if (frame < pixelOnFrames){
+    // first beat
+    int inRange = countDevicesInRange();
+    for(int i = 0; i < inRange; i++){
+      // set ledIndex based on how many are in range
+      int ledIndex = (STRIP_LED_COUNT / inRange) * i;
+//      // modify that based on the frame to make it spin
+//      ledIndex = (ledIndex + (loopCycles/200)) % STRIP_LED_COUNT;
+      
+      neopixel.setPixelColor(ledIndex, neopixel.gamma32(neopixel.ColorHSV(20000)));
+    }
+  }else{
+    // second beat
+
+    int8_t rssiForDevices[128];
+
+    // count how many devices we've seen recently and collect their rssi's
+    int inRange = 0;
+    for(int i = 0; i < seenDevicesCount; i++){
+      SeenDevice s = seenDevices[i];
+      if ((millis() - s.lastSeenAt) < PROXIMITY_TIMEOUT + (frame * NEOPIXEL_TIMER_SPEED)){ // timeout.  compensate for time since the first heartbeat.
+        rssiForDevices[inRange] = s.rssi;
+        inRange++;
+      }
+    }
+
+    // count how many devices we've seen recently and collect their rssi's
+    for(int i = 0; i < inRange; i++){
+      if (frame > rssiToNextHeartbeatFrame(rssiForDevices[i]) + pixelOnFrames && frame < rssiToNextHeartbeatFrame(rssiForDevices[i]) + (pixelOnFrames * 2)){
+        int ledIndex = (STRIP_LED_COUNT / inRange) * i;
+        neopixel.setPixelColor(ledIndex, neopixel.gamma32(neopixel.ColorHSV(20000)));
+      }
+    }
+
+    
+  }
+  neopixel.show();
+}
+
+
 void displayProximityCountWithRssiBrightnessSingleColor(){  
   // turn off all
   for(int i = 0; i < STRIP_LED_COUNT; i++){
@@ -10,7 +58,7 @@ void displayProximityCountWithRssiBrightnessSingleColor(){
   int inRange = 0;
   for(int i = 0; i < seenDevicesCount; i++){
     SeenDevice s = seenDevices[i];
-    if ((millis() - s.lastSeenAt) < 5000){ // timeout
+    if ((millis() - s.lastSeenAt) < PROXIMITY_TIMEOUT){ // timeout
       rssiForDevices[inRange] = s.rssi;
       inRange++;
     }
@@ -50,7 +98,7 @@ void displayProximityCountWithRssiBrightness(int frame){
   int inRange = 0;
   for(int i = 0; i < seenDevicesCount; i++){
     SeenDevice s = seenDevices[i];
-    if ((millis() - s.lastSeenAt) < 5000){ // timeout
+    if ((millis() - s.lastSeenAt) < PROXIMITY_TIMEOUT){ // timeout
       rssiForDevices[inRange] = s.rssi;
       inRange++;
     }
