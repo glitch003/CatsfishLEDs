@@ -151,7 +151,7 @@ void displayProximityCount(int inRange, int frame){
   neopixel.show();
 }
 
-void displayIdleRainbow(int frame){
+void displayIdleRainbow(int frame, bool pulsing){
   long firstPixelHue = frame * 256;
   for(int i=0; i<STRIP_LED_COUNT; i++) { // For each pixel in strip...
     // Offset pixel hue by an amount to make one full revolution of the
@@ -163,7 +163,11 @@ void displayIdleRainbow(int frame){
     // Here we're using just the single-argument hue variant. The result
     // is passed through strip.gamma32() to provide 'truer' colors
     // before assigning to each pixel:
-    neopixel.setPixelColor(i, neopixel.gamma32(neopixel.ColorHSV(pixelHue)));
+    int brightnessValue = 255;
+    if (pulsing) {
+      brightnessValue = frame / 2 % 128;
+    }
+    neopixel.setPixelColor(i, neopixel.gamma32(neopixel.ColorHSV(pixelHue,255,brightnessValue)));
   }
   neopixel.show(); // Update strip with new contents
 }

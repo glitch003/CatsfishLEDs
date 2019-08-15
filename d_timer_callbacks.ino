@@ -13,14 +13,15 @@ void neopixelTimerCallback(TimerHandle_t _handle){
     if (devicesInRange > 0){
       brightness = 100;
       neopixel.setBrightness(brightness);
-      displayProximityCountHeartbeat(frame);
-//      displayProximityCount(devicesInRange, frame);
+//      displayProximityCountHeartbeat(frame);
+      displayProximityCount(devicesInRange, frame);
 //      displayProximityCountWithRssiBrightness(frame);
 //      displayProximityCountWithRssiBrightnessSingleColor();
     } else {
-      brightness = 10;
+      brightness = 100;
       neopixel.setBrightness(brightness);
-      displayIdleRainbow(frame);
+      displayIdleRainbow(frame, true);
+//      displayIdleRainbow(frame);
     }
   } else if (mode == 3){
     // range test mode
