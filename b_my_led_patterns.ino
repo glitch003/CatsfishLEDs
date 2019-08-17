@@ -165,15 +165,31 @@ void displayIdleRainbow(int frame, bool pulsing){
     // before assigning to each pixel:
     int brightnessValue = 255;
     int minBrightness = 60;
-    int maxBrightness = 128;
+    int maxBrightness = 90;
     int brightnessDiff = maxBrightness - minBrightness;
     if (pulsing) {
-      if ((loopCycles / brightnessDiff) % 2 == 0){
-        brightnessValue = (loopCycles % brightnessDiff) + minBrightness;
-      }else{
-        brightnessValue = maxBrightness - ((loopCycles % brightnessDiff));
-      }
+      int cyclePoint = loopCycles / 5;
+      int pulseStep = (cyclePoint / brightnessDiff) % 4;
+//      Serial.print("pulseStep: ");
+//      Serial.print(pulseStep);
+//      Serial.print(", (loopCycles / brightnessDiff): ");
+//      Serial.println(loopCycles / brightnessDiff);
       
+      if (pulseStep == 0){
+        // bring up
+        brightnessValue = (cyclePoint % brightnessDiff) + minBrightness;
+      } else if (pulseStep == 1){
+        // wait at the top
+        brightnessValue = maxBrightness;
+      } else if (pulseStep == 2){
+        // bring down
+        brightnessValue = maxBrightness - ((cyclePoint % brightnessDiff));
+      } else{
+        // wait at bottom
+        brightnessValue = minBrightness;
+      }
+//      Serial.print("brightnessValue: ");
+//      Serial.println(brightnessValue);
     }
     neopixel.setPixelColor(i, neopixel.gamma32(neopixel.ColorHSV(pixelHue,255,brightnessValue)));
   }
