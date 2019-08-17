@@ -59,7 +59,7 @@ void displayBatteryLevel(){
   int ledLevel = STRIP_LED_COUNT * (vbat_per / 100.0F);
   uint32_t pixelColor = neopixel.Color(0,255,0);
   if (vbat_per < LOW_BATTERY_PERCENTAGE){
-    pixelColor = neopixel.Color(0,255,0);
+    pixelColor = neopixel.Color(255,0,0);
   } else if(vbat_per < 60){
     pixelColor = neopixel.Color(255,255,0);
   }
