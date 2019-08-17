@@ -56,7 +56,10 @@ void displayBatteryLevel(){
   // Convert from raw mv to percentage (based on LIPO chemistry)
   uint8_t vbat_per = mvToPercent(vbat_mv);
 
-  int ledLevel = STRIP_LED_COUNT * (vbat_per / 100.0F);
+  int ledLevel = (STRIP_LED_COUNT * (vbat_per / 100.0F)) + 1;
+  if (ledLevel > STRIP_LED_COUNT){
+    ledLevel = STRIP_LED_COUNT;
+  }
   uint32_t pixelColor = neopixel.Color(0,255,0);
   if (vbat_per < LOW_BATTERY_PERCENTAGE){
     pixelColor = neopixel.Color(255,0,0);
