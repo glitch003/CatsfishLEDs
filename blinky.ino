@@ -112,7 +112,7 @@ Adafruit_NeoPixel neopixel = Adafruit_NeoPixel(STRIP_LED_COUNT, STRIP_PIN, NEO_G
 //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
 //   NEO_RGBW    Pixels are wired for RGBW bitstream (NeoPixel RGBW products)
 
-#define NEOPIXEL_TIMER_SPEED 10
+#define NEOPIXEL_TIMER_SPEED 500
 
 
 #define BUTTON_PIN 11
