@@ -164,8 +164,16 @@ void displayIdleRainbow(int frame, bool pulsing){
     // is passed through strip.gamma32() to provide 'truer' colors
     // before assigning to each pixel:
     int brightnessValue = 255;
+    int minBrightness = 60;
+    int maxBrightness = 128;
+    int brightnessDiff = maxBrightness - minBrightness;
     if (pulsing) {
-      brightnessValue = frame / 2 % 128;
+      if ((loopCycles / brightnessDiff) % 2 == 0){
+        brightnessValue = (loopCycles % brightnessDiff) + minBrightness;
+      }else{
+        brightnessValue = maxBrightness - ((loopCycles % brightnessDiff));
+      }
+      
     }
     neopixel.setPixelColor(i, neopixel.gamma32(neopixel.ColorHSV(pixelHue,255,brightnessValue)));
   }
