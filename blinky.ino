@@ -101,6 +101,10 @@ int mode = 1;
 // 2 = headlamp mode
 // 3 = range test mode
 
+// more mode ideas - 
+// super bright mode (for daytime)
+// darker mode (chillaxing)
+
 
 Adafruit_NeoPixel neopixel = Adafruit_NeoPixel(STRIP_LED_COUNT, STRIP_PIN, NEO_GRB + NEO_KHZ800);
 // Argument 1 = Number of pixels in NeoPixel strip
