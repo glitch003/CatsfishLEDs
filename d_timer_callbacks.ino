@@ -55,11 +55,16 @@ void batteryCheckISRCallback(){
 
 #ifdef DEBUG_BAT_AND_TEMP
   // Display the results
+  Serial.print("CATSFISH VERSION: ");
+  Serial.println(CATSFISH_VERSION_STRING);
+
   Serial.print("LIPO = ");
   Serial.print(vbat_mv);
   Serial.print(" mV (");
   Serial.print(vbat_per);
   Serial.println("%)");
+
+  printTemp();
 #endif
 
   if (vbat_per <= LOW_BATTERY_PERCENTAGE){
@@ -75,5 +80,5 @@ void batteryCheckISRCallback(){
     set_low_battery_led(false);
   }
 
-  printTemp();
+  
 }

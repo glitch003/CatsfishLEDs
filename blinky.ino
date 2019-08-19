@@ -23,6 +23,8 @@
 #define DEBUG_BLE
 #define DEBUG_BAT_AND_TEMP
 
+#define CATSFISH_VERSION_STRING "CATSFISH v1.0"
+
 // master external antenna switch.  comment this out to use internal antenna.
 //#define EXTERNAL_ANTENNA
 
