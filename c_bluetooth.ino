@@ -165,12 +165,14 @@ void basic_scan_callback(ble_gap_evt_adv_report_t* report)
   uint8_t buffer[32];
   memset(buffer, 0, sizeof(buffer));
 
+#ifdef DEBUG_BLE
   Serial.print("Device ");
   Serial.printBufferReverse(report->peer_addr.addr, 6, ':');
   Serial.print(" seen at ");
   Serial.print(millis() / 1000);
   Serial.print(" seconds with rssi ");
   Serial.printf("%14s %d dBm\n", "RSSI", report->rssi);
+#endif
 
   deviceLastSeen = millis();
   ledsToShowBasedOnRssi = rssiToLedCount(report->rssi);

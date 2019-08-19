@@ -87,6 +87,11 @@ void displayProximityCountWithRssiBrightnessSingleColor(){
 
 
 void displayProximityCountWithRssiBrightness(int frame){  
+#ifdef DEBUG_LED_PATTERNS
+  Serial.print("displayProximityCountWithRssiBrightness(");
+  Serial.print(frame);
+  Serial.println(")");
+#endif
   // turn off all
   for(int i = 0; i < STRIP_LED_COUNT; i++){
     neopixel.setPixelColor(i, neopixel.Color(0,0,0));
@@ -103,6 +108,10 @@ void displayProximityCountWithRssiBrightness(int frame){
       inRange++;
     }
   }
+#ifdef DEBUG_LED_PATTERNS
+  Serial.print("inRange: ");
+  Serial.println(inRange);
+#endif
 
 
   long firstPixelHue = frame * 256;

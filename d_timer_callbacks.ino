@@ -1,7 +1,11 @@
 
 
-
 void neopixelTimerCallback(TimerHandle_t _handle){
+  ada_callback_fromISR(NULL, 0, neopixelTimerISRCallback); // Queue up a task with no extra variables and no arguments.
+}
+
+
+void neopixelTimerISRCallback(){
   loopCycles++;
   int frame = loopCycles % FRAME_COUNT;
 
@@ -14,8 +18,8 @@ void neopixelTimerCallback(TimerHandle_t _handle){
       brightness = 100;
       neopixel.setBrightness(brightness);
 //      displayProximityCountHeartbeat(frame);
-      displayProximityCount(devicesInRange, frame);
-//      displayProximityCountWithRssiBrightness(frame);
+//      displayProximityCount(devicesInRange, frame);
+      displayProximityCountWithRssiBrightness(frame);
 //      displayProximityCountWithRssiBrightnessSingleColor();
     } else {
       brightness = 100;
@@ -48,12 +52,14 @@ void batteryCheckISRCallback(){
   // Convert from raw mv to percentage (based on LIPO chemistry)
   uint8_t vbat_per = mvToPercent(vbat_mv);
 
+#ifdef DEBUG_BAT_AND_TEMP
   // Display the results
   Serial.print("LIPO = ");
   Serial.print(vbat_mv);
   Serial.print(" mV (");
   Serial.print(vbat_per);
   Serial.println("%)");
+#endif
 
   if (vbat_per <= LOW_BATTERY_PERCENTAGE){
     int flash_delay = vbat_per * 40; // if it's 25 percent, this is a 1000 second delay between flashes because 25 * 40 = 1000.

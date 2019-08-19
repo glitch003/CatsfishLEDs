@@ -19,8 +19,9 @@
 
 //#include <FastLED.h>
 
-
-//BLEUart bleuart; // uart over ble
+#define DEBUG_LED_PATTERNS
+#define DEBUG_BLE
+#define DEBUG_BAT_AND_TEMP
 
 // master external antenna switch.  comment this out to use internal antenna.
 //#define EXTERNAL_ANTENNA
