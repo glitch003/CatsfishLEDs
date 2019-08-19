@@ -57,6 +57,9 @@ void batteryCheckISRCallback(){
   // Display the results
   Serial.print("CATSFISH VERSION: ");
   Serial.println(CATSFISH_VERSION_STRING);
+  
+  printOwnMacAddress();
+
 
   Serial.print("LIPO = ");
   Serial.print(vbat_mv);

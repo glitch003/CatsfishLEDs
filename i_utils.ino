@@ -89,3 +89,12 @@ int rssiToNextHeartbeatFrame(int8_t rssi){
 
 
 }
+
+
+void printOwnMacAddress(){
+  uint8_t addr[6];
+  Bluefruit.getAddr(addr);
+  Serial.print("Address: ");
+  Serial.printBufferReverse(addr, 6, ':');
+  Serial.println();
+}
