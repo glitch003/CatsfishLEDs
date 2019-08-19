@@ -8,11 +8,12 @@ void setModeBasedOnNumberOfPresses(int pressCount){
     mode = 2;
     exitProximityMode();
     enterHeadlampMode();
-  } else if (pressCount == 3) {
-    mode = 3;
-    turnOffAll();
-    enterProximityMode();
-  }
+  } 
+//  else if (pressCount == 3) {
+//    mode = 3;
+//    turnOffAll();
+//    enterProximityMode();
+//  }
 }
 
 

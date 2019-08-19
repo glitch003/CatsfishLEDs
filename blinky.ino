@@ -100,7 +100,7 @@ int mode = 1;
 // 0 = off
 // 1 = proximity mode
 // 2 = headlamp mode
-// 3 = range test mode
+// 3 = range test mode (disbled for now)
 
 // more mode ideas - 
 // super bright mode (for daytime)

@@ -27,18 +27,19 @@ void neopixelTimerISRCallback(){
       displayIdleRainbow(frame, true);
 //      displayIdleRainbow(frame);
     }
-  } else if (mode == 3){
-    // range test mode
-    int devicesInRange = countDevicesInRange();
-
-    if (devicesInRange > 0){
-      brightness = 50;
-      neopixel.setBrightness(brightness);
-      displayRangeTestRainbow(frame);
-    } else {
-      turnOffAll();
-    }
   }
+//  else if (mode == 3){
+//    // range test mode
+//    int devicesInRange = countDevicesInRange();
+//
+//    if (devicesInRange > 0){
+//      brightness = 50;
+//      neopixel.setBrightness(brightness);
+//      displayRangeTestRainbow(frame);
+//    } else {
+//      turnOffAll();
+//    }
+//  }
 }
 
 void batteryCheckCallback(TimerHandle_t _handle){
