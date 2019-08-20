@@ -98,3 +98,15 @@ void printOwnMacAddress(){
   Serial.printBufferReverse(addr, 6, ':');
   Serial.println();
 }
+
+bool isMacAddressACatsfish(uint8_t addr[6]){
+//  Serial.print("isMacAddressACatsfish: ");
+//  Serial.printBufferReverse(addr, 6, ':');
+//  Serial.println();
+  for(int i = 0; i < ALL_ADDRESSES_LENGTH; i++){
+    if (memcmp(allAddresses[i], addr, 6) == 0){
+      return true;
+    }
+  }
+  return false;
+}

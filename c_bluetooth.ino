@@ -161,9 +161,9 @@ uint8_t rssiToLedCount(int8_t rssi){
 void basic_scan_callback(ble_gap_evt_adv_report_t* report)
 {
   PRINT_LOCATION();
-  uint8_t len = 0;
-  uint8_t buffer[32];
-  memset(buffer, 0, sizeof(buffer));
+//  uint8_t len = 0;
+//  uint8_t buffer[32];
+//  memset(buffer, 0, sizeof(buffer));
 
 #ifdef DEBUG_BLE
   Serial.print("Device ");
@@ -173,6 +173,15 @@ void basic_scan_callback(ble_gap_evt_adv_report_t* report)
   Serial.print(" seconds with rssi ");
   Serial.printf("%14s %d dBm\n", "RSSI", report->rssi);
 #endif
+
+  if (!isMacAddressACatsfish(report->peer_addr.addr)){
+    // device is not a catsfish.  bail.
+    
+    // For Softdevice v6: after received a report, scanner will be paused
+    // We need to call Scanner resume() to continue scanning
+    Bluefruit.Scanner.resume();
+    return;
+  }
 
   deviceLastSeen = millis();
   ledsToShowBasedOnRssi = rssiToLedCount(report->rssi);
@@ -203,11 +212,6 @@ void basic_scan_callback(ble_gap_evt_adv_report_t* report)
     seenDevices[foundIndex].lastSeenAt = millis();
     seenDevices[foundIndex].rssi = report->rssi;
   }
-
-  
-
-  
-
 
 
 
