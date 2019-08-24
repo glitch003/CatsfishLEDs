@@ -132,7 +132,7 @@ volatile int lastButtonState = HIGH;
 volatile unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
 const unsigned long debounceDelay = 50;    // the debounce time; increase if the output flickers
 volatile unsigned long lastPressTime = 0;
-const unsigned long maxTimeInbetweenMultipleClicks = 3000;
+const unsigned long maxTimeInbetweenMultipleClicks = 2000;
 volatile int pressCount = 0;
 
 SoftwareTimer neopixelTimer, batteryCheckTimer;

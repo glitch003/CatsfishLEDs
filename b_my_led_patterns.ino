@@ -113,6 +113,9 @@ void displayProximityCountWithRssiBrightness(int frame){
   Serial.println(inRange);
 #endif
 
+  if (inRange > 16){
+    inRange = 16;
+  }
 
   long firstPixelHue = frame * 256;
 
@@ -172,11 +175,12 @@ void displayIdleRainbow(int frame, bool pulsing){
     // Here we're using just the single-argument hue variant. The result
     // is passed through strip.gamma32() to provide 'truer' colors
     // before assigning to each pixel:
-    int brightnessValue = 255;
-    int minBrightness = 60;
-    int maxBrightness = 90;
-    int brightnessDiff = maxBrightness - minBrightness;
+    
     if (pulsing) {
+      int brightnessValue = 255;
+      int minBrightness = 60;
+      int maxBrightness = 90;
+      int brightnessDiff = maxBrightness - minBrightness;
       int cyclePoint = loopCycles / 5;
       int pulseStep = (cyclePoint / brightnessDiff) % 4;
 //      Serial.print("pulseStep: ");
@@ -199,8 +203,11 @@ void displayIdleRainbow(int frame, bool pulsing){
       }
 //      Serial.print("brightnessValue: ");
 //      Serial.println(brightnessValue);
+      neopixel.setPixelColor(i, neopixel.gamma32(neopixel.ColorHSV(pixelHue,255,brightnessValue)));
+    } else {
+      neopixel.setPixelColor(i, neopixel.gamma32(neopixel.ColorHSV(pixelHue)));
     }
-    neopixel.setPixelColor(i, neopixel.gamma32(neopixel.ColorHSV(pixelHue,255,brightnessValue)));
+    
   }
   neopixel.show(); // Update strip with new contents
 }
