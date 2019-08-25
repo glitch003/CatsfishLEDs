@@ -15,14 +15,14 @@ void neopixelTimerISRCallback(){
 
     int devicesInRange = countDevicesInRange();
     if (devicesInRange > 0){
-      brightness = 150;
+      brightness = 50;
       neopixel.setBrightness(brightness);
 //      displayProximityCountHeartbeat(frame);
 //      displayProximityCount(devicesInRange, frame);
       displayProximityCountWithRssiBrightness(frame);
 //      displayProximityCountWithRssiBrightnessSingleColor();
     } else {
-      brightness = 100;
+      brightness = 20;
       neopixel.setBrightness(brightness);
       displayIdleRainbow(frame, false);
 //      displayIdleRainbow(frame);
